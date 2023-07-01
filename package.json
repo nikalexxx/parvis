@@ -1,10 +1,14 @@
 {
   "name": "parvis",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Light library for user interface",
   "main": "dist/index.cjs.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nikalexxx/parvis.git"
+  },
   "files": [
     "dist",
     "README.md"
