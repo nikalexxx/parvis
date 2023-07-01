@@ -1,0 +1,27 @@
+root = true
+
+[*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[{*.json,*.yml}]
+indent_style = space
+indent_size = 2
+
+[{GNUmakefile, Makefile}]
+indent_style = tab
+indent_size = 4
+
+[*.js]
+quote_type = single
+
+[*.ts]
+quote_type = single
+
+[*.bbx.tsx]
+indent_size = 0
+trim_trailing_whitespace = false

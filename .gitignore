@@ -1,0 +1,7 @@
+.DS_Store
+
+# deps
+node_modules
+
+# build
+dist

@@ -1,0 +1,42 @@
+button {
+  border: none;
+  background-color: antiquewhite;
+  border-radius: 4px;
+  padding: 4px 1em;
+  margin: 2px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: rgb(255, 199, 125);
+}
+
+:root {
+  font-family: sans-serif;
+}
+
+.app {
+  border: 1px solid green;
+  border-radius: 4px;
+  margin: 8px 0;
+}
+
+hr {
+  height: 5px;
+  border: none;
+  background-color: rgb(185, 185, 185);
+}
+
+.redbox {
+  border: 1px solid red;
+  padding: 20px;
+  margin: 20px;
+  overflow: scroll;
+  border-radius: 16px;
+  box-shadow: inset 0px 0px 15px red;
+}
+
+.ref:focus {
+  border: 1px solid green;
+  margin: 1px;
+}
