@@ -6,6 +6,7 @@ import {
   VDOMElement,
   VDOMRefDom,
   VDOMLightComponent,
+  TemplateTreeComponent,
 } from '../model';
 import { emptySymbol } from '../utils/diff';
 import { Primitive } from '../utils/type-helpers';
@@ -54,7 +55,7 @@ export type ExternalComponentEffects = {
  */
 export type VDOMComponent<P extends ComponentProps = ComponentProps> =
   VDOMRefDom & {
-    render: ComponentGetTemplate; // получение лёгкой разметки
+    render: () => TemplateTreeElement; // получение лёгкой разметки
     name: string; // отображаемое имя компонента
     nameSymbol: symbol; // уникальный символ компонента
     instance: string; // ключ инстанса
@@ -99,14 +100,16 @@ export type ComponentRender = () => VDOMLightElement;
  *
  * разрешены только элементы
  */
-export type ComponentGetTemplate = () => TemplateTreeElement;
+export type ComponentGetTemplate<P extends ComponentProps> = (props?: ComponentInternalProps<P>) =>
+  | TemplateTreeElement
+  | TemplateTreeComponent;
 
 /**
  * функция, описывающая поведение компонента
  */
-export type MakeComponent<P extends ComponentProps = ComponentProps> = (
+export type MakeComponent<P extends ComponentProps = {}> = (
   params: ComponentParams<P>
-) => ComponentGetTemplate;
+) => ComponentGetTemplate<P>;
 
 export type ComponentBindedDOMData = {
   component: VDOMComponent;

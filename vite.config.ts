@@ -10,7 +10,7 @@ export default defineConfig({
   },
   build: {
     lib: {
-      entry: 'src/index.ts',
+      entry: ['src/index.ts'],
       fileName: (format, name) => `${name}${format === 'es' ? '' : '.cjs'}.js`,
       formats: ['es', 'cjs'],
     },

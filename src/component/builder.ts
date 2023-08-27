@@ -1,24 +1,34 @@
-import { createTreeBuilder, TreeBuilder } from 'dot-tree-syntax';
+import { createTreeBuilder } from 'dot-tree-syntax';
 import { ComponentProps, MakeComponent } from './model';
-import { TemplateTreeComponent } from '../model';
+import { ComponentFunction } from '../model';
 
-export type ComponentBuildRoot = <P extends ComponentProps>(
+export type ComponentBuildRoot = <P extends ComponentProps = {}>(
   name: string,
   make: MakeComponent<P>
-) => TreeBuilder<TemplateTreeComponent<P>, { useTemplateStrings: true }>;
+) => ComponentFunction<P>;
 
 /**
  * внешний интерфейс компонента
  *
  * @example
- * ```ts
- * const RandomButton = Component('RandomButton', () => () => H.button(Math.random()));
+ * ```tsx
+ * const RandomButton = Component('RandomButton', () => () => <button>{Math.random()}</button>);
  *
- * const RandomList = Component('RandomList', ({props}) => ()
- *   => E.div((new Array(props.count)).map(() => RandomButton)))
+ * const RandomList = Component<{count: number}>('RandomList', ({props}) => ()
+ *   => <div>{Array.from({length: props().count}).map(() => <RandomButton/>)}</div>
  * ```
  */
 export const Component: ComponentBuildRoot = (name, make) => {
   (make as any).displayName = name; // имя в основном для отладки
-  return createTreeBuilder(make as any);
+  const builder = createTreeBuilder(make);
+
+  const getComponent: ComponentFunction = (props, children) => ({
+    name: make as any,
+    props,
+    children: children as any,
+  });
+
+  getComponent.C = builder;
+
+  return getComponent as any;
 };

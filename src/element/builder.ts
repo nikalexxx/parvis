@@ -8,6 +8,16 @@ import { HtmlElementsAttributesMap } from 'html-tag-types';
 
 import { TemplateTreeNode, TreeProps, DOMNamespace } from '../model';
 
+type Attribute<T> = T extends string[] ? T | string : T;
+
+type HtmlAttributes = {
+  [K in keyof HtmlElementsAttributesMap]: {
+    [Name in keyof HtmlElementsAttributesMap[K]]: Attribute<HtmlElementsAttributesMap[K][Name]>;
+  };
+}
+export type HtmlTag = keyof HtmlAttributes;
+
+
 type CustomDOMAttributes<TagName, Props extends CommonProps> = {
   // _update(): boolean;
   // _replaceOnUpdate?: boolean;
@@ -22,22 +32,39 @@ type CustomDOMAttributes<TagName, Props extends CommonProps> = {
 
 export type HTML = { child: TemplateTreeNode };
 
+type EventName = keyof HTMLElementEventMap;
+
 type EventHandlerName<T extends string> = `on${Capitalize<T>}`;
+type GetEventNameFromHandler<T extends string> = T extends `on${infer X}`
+  ? Lowercase<X>
+  : T;
 
-type HtmlEvents = {
-  [K in EventHandlerName<keyof HTMLElementEventMap>]: K extends `on${infer X}`
-    ? Lowercase<X> extends keyof HTMLElementEventMap
-      ? HTMLElementEventMap[Lowercase<X>]
-      : never
-    : never;
-};
+type EventHandlerJXSName<T extends string> = `on:${T}`;
+type GetEventNameFromJSXHandler<T extends string> = T extends `on:${infer X}`
+  ? X
+  : T;
 
-type HtmlEventCallbacks = {
-  [Name in keyof HtmlElementsAttributesMap]: Name extends keyof HTMLElementTagNameMap
+type GetEventHandlerNames<useNamespace = false> = useNamespace extends true
+  ? EventHandlerJXSName<EventName>
+  : EventHandlerName<EventName>;
+
+type GetEventNameFromHandlerImpl<T extends string, useNamespace = false> = (
+  useNamespace extends true
+    ? GetEventNameFromJSXHandler<T>
+    : GetEventNameFromHandler<T>
+) extends infer X extends EventName
+  ? X
+  : never;
+
+type HtmlEventCallbacks<useNamespace = false> = {
+  [Name in keyof HtmlAttributes]: Name extends keyof HTMLElementTagNameMap
     ? {
-        [K in EventHandlerName<keyof HTMLElementEventMap>]: (
+        [K in GetEventHandlerNames<useNamespace>]: (
           this: HTMLElementTagNameMap[Name],
-          event: Omit<HtmlEvents[K], 'currentTarget'> & {
+          event: Omit<
+            HTMLElementEventMap[GetEventNameFromHandlerImpl<K, useNamespace>],
+            'currentTarget'
+          > & {
             currentTarget: HTMLElementTagNameMap[Name];
           }
         ) => void;
@@ -45,9 +72,7 @@ type HtmlEventCallbacks = {
     : never;
 };
 
-type HtmlAttributes = HtmlElementsAttributesMap;
 
-export type HtmlTag = keyof HtmlAttributes;
 
 export type ElementTarget<
   TagName,
@@ -58,17 +83,34 @@ export type ElementTarget<
   HTML
 >;
 
+export type HtmlElementRawProps<
+  T extends HtmlTag,
+  useNamespace = false
+> = HtmlAttributes[T] & HtmlEventCallbacks<useNamespace>[T];
+
+export type HtmlElementProps<
+  T extends HtmlTag,
+  useNamespace = false
+> = HtmlElementRawProps<T, useNamespace> &
+  TreeProps &
+  CustomDOMAttributes<T, HtmlElementRawProps<T, useNamespace>>;
+
+export type HtmlElementTarget<T extends HtmlTag> = ElementTarget<
+  T,
+  HtmlElementProps<T>
+>;
+
 export type HtmlTargets = {
-  [TagName in HtmlTag]: ElementTarget<TagName, HtmlAttributes[TagName]>;
+  [TagName in HtmlTag]: HtmlElementTarget<TagName>;
 };
 
 export type HTMLRoot = {
-  [N in HtmlTag]: TreeBuilder<
-    ElementTarget<N, HtmlAttributes[N] & HtmlEventCallbacks[N]>,
-    { useTemplateStrings: true }
+  [TagName in HtmlTag]: TreeBuilder<
+    HtmlElementTarget<TagName>
+    // { useTemplateStrings: true }
   >;
 };
 
 export const H = new Proxy({} as HTMLRoot, {
-  get: (_, name) => createTreeBuilder([DOMNamespace.xhtml, name]),
+  get: (_, name) => createTreeBuilder(['xhtml', name]),
 });

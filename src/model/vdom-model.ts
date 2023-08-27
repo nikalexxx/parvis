@@ -8,9 +8,9 @@ export type HTML_TAG = keyof HTMLElementTagNameMap;
 export type SVG_TAG = keyof SVGElementTagNameMap;
 
 export type Tags = {
-    [DOMNamespace.xhtml]: HTML_TAG;
-    [DOMNamespace.svg]: SVG_TAG;
-    [DOMNamespace.mathml]: string;
+    xhtml: HTML_TAG;
+    svg: SVG_TAG;
+    mathml: string;
 };
 
 // типы контента

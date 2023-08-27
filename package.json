@@ -1,6 +1,6 @@
 {
   "name": "parvis",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Light library for user interface",
   "main": "dist/index.cjs.js",
   "module": "dist/index.js",
@@ -11,15 +11,34 @@
   },
   "files": [
     "dist",
+    "jsx-runtime.d.ts",
+    "jsx-dev-runtime.d.ts",
     "README.md"
   ],
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs.js",
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./jsx-runtime": {
+      "default": "./dist/index.js",
+      "types": "./dist/jsx-runtime/index.d.ts"
+    },
+    "./jsx-dev-runtime": {
+      "default": "./dist/index.js",
+      "types": "./dist/jsx-runtime/index.d.ts"
+    }
+  },
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "build-jsx": "vite build --config vite.config.jsx.ts"
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "typescript": "^5.1.6",
     "vite": "^4.2.1",
     "vite-plugin-dts": "^2.3.0"
   },

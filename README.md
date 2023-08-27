@@ -1,102 +1,214 @@
 # parvis
 
-light framework for user interfaces
+Light framework for user interfaces.
+
+Mini virtual DOM, rich features for components, lifecycle hooks, total typing.
 
 ```
 npm install parvis
 ```
 
 ## Usage
-```typescript
 
-// App.ts
-import {Component, H} from 'parvis';
+### with jsx
+1. Add in `tsconfig.json` settings for jsx `"jsxImportSource": "parvis"`, for example
+```json
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "jsxImportSource": "parvis" // <- here
+  }
+}
+```
+
+2. Add parvis jsx for your bundler, for example for `vite`
+
+```typescript
+// vite.config.ts
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  esbuild: {
+    charset: 'utf8',
+    jsxImportSource: 'parvis', // <- here
+  },
+  server: {
+    port: 3000,
+  },
+});
+
+```
+
+3. Use jsx as usual (as in React or Vue) to create html elements. Use function `Component` to create components with lifecycle.
+
+Example
+
+`App.tsx`
+```tsx
+import {Component} from 'parvis';
 
 const App = Component('App', ({ hooks, state }) => {
-  hooks.mount(() => {
+  hooks.mount(() => { // hooks for lifecycle methods
     console.log('app mount');
   });
 
-  const [start, setStart] = state(0);
+  const [start, setStart] = state(0); // function `state` create signals
   const [visible, setVisible] = state(true);
   const [text, setText] = state('');
   const [option, setOption] = state('A' as Options[number]);
 
   let ref: HTMLElement;
 
-  const setRefFocus = () => {
-    ref.focus();
-  };
-
   return () =>
-    H.main(
-      H.div(H.h2`hello, world`, 'test'),
-      H.div(
-        H.button.onClick(() => setVisible((x) => !x))(
-          visible() ? 'hide counter' : 'show counter'
-        ),
-        visible() &&
-          H.article(
-            H.div(
-              H.button.onClick(() => setStart((x) => x + 1))`+ start`,
-              H.br,
-              H.button.onClick(() => setStart((x) => x - 1))`- start`
-            ),
-            H.div(start())
-          )
-      ),
-      H.div`only string pi = ${H.code(Math.PI)}`,
-      H.div(
-        ...Array(10)
+    <main>
+      <div>
+        pi = <code>{Math.PI}</code>
+      </div>
+      <div>
+        {...Array(10)
           .fill(0)
           .map((_, i) => [
-            ...(i > 0 ? [',', H.br()] : []),
-            H.span(Math.random()),
-          ])
-      ),
-      H.div(
-        H.h2('interactive'),
-        H.input.value(text()).onInput((e) => setText(e.currentTarget.value)),
-        H.button.onClick(() =>
-          setText((x) => x.split('').reverse().join(''))
-        )`reverse`,
-        H.p(H.pre(text())),
-        H.hr,
-        H.textarea.onInput((e) => setText(e.currentTarget.value))(text()),
-        H.hr,
-        H.select(
-          ...options.map((value) =>
-            H.option
-              .selected(value === option())
-              .onClick(() => setOption(value))(value)
-          )
-        ),
-        H.button.onClick(() =>
-          setOption(options[Math.trunc(Math.random() * 3)])
-        )`random`,
-        H.pre(option()),
-        H.hr,
-        H.button.onDblclick(() => console.log('double click'))`double click`
-      ),
-      H.div(
-        H.h2`ref`,
-        H.button
-          ._ref((el) => {
-            ref = el;
-          })
-          .onClick(() => console.log('click from enter'))`ref`,
-        H.button.onClick(() => {
-          ref.focus();
-        })`focus ref`
-      )
-    );
+            ...(i > 0 ? [",", <br />] : []),
+            <span>{Math.random()}</span>,
+          ])}
+      </div>
+      <div>
+        <h2>interactive</h2>
+        <input
+          value={text()}
+          on:input={(e) => setText(e.currentTarget.value)}
+        />
+        <button on:click={() => setText((x) => x.split("").reverse().join(""))}>
+          reverse
+        </button>
+        <p>
+          <pre>{text()}</pre>
+        </p>
+        <hr />
+        <textarea on:input={(e) => setText(e.currentTarget.value)}>
+          {text()}
+        </textarea>
+        <hr />
+        <select>
+          {...options.map((value) => (
+            <option
+              selected={value === option()}
+              on:click={() => setOption(value)}
+            >
+              {value}
+            </option>
+          ))}
+        </select>
+        <button
+          on:click={() => setOption(options[Math.trunc(Math.random() * 3)])}
+        >
+          random
+        </button>
+        <pre>{option()}</pre>
+        <hr />
+        <button on:dblclick={() => console.log("double click")}>
+          double click
+        </button>
+      </div>
+    </main>
 });
+```
 
-// index.ts
+
+`index.tsx`
+```tsx
 import {render} from 'parvis';
 import {App} from './App';
 
 // for <div id="root"></div>
-render('#root', App());
+render('#root', <App />);
 
+```
+
+### without jsx
+You can import html builder as constant `H`
+
+```tsx
+import {H} from 'parvis';
+
+const element = <div on:click={() => console.log('click')}>text</div>;
+
+// is equal
+
+const element2 = H.div.onClick(() => console.log('click'))('text');
+```
+
+You can use prop `C` for components
+```tsx
+import {Component} from 'parvis';
+
+const Block = Component<{red?: boolean}>('block', () =>
+  ({children, red}) => <div style={red && 'color: red'}>{children}</div>
+);
+
+const block1 = <Block red>text</Block>;
+
+// is equal
+
+const block2 = Block.C.red(true)('text');
+```
+
+## HTML attributes
+All attributes for html tags — https://github.com/nikalexxx/html-tag-types
+
+An agreement has been defined for event handlers: all handlers have the prefix `on:`.
+
+Names that start with an underscore are reserved for technical properties, for example:
+- `_ref` to link a virtual and real DOM.
+- `_html` to insert raw html. This is dangerous because there are no sanitizers!
+- `_attributes` to insert multiple attributes at once.
+
+## Components
+
+Each component has a name and an setup function that returns a render function.
+
+**The render function should return only the html element and nothing else!**
+
+The arguments of the installation function are props, state, and hooks.
+- `props` are passed to the component from the outside.
+- `state` is a generator of local states, returns a pair of getter + setter
+- `hooks` describe lifecycle methods such as `mount`, `destroy`, and `effect` (effect is a subscribing to state updates)
+
+The arguments of the render function are props, state, and hooks.
+
+```tsx
+import {Component} from 'parvis';
+
+const Text = Component<{size?: string}>( // type for internal props
+  'text',
+  // setup function
+  ({props, state, hooks}) => {
+    // hooks usage
+    hooks.mount(() => {
+      alert('hello');
+    });
+
+
+    // prepare state
+    const [getText, setText] = state('hello'); // initial text `hello`
+
+    // handler
+    const onTextClick = () => {
+      // setter has old state, return new state
+      setText(oldText => `${oldText}+${oldText}`);
+    }
+
+    // render
+    return ({size, children}) => { // all props, internal + common (children and other)
+      const text = getText(); // get local state
+
+      return <div style={`height: ${size ?? 12}px`} on:click={onTextClick}>
+        {text}{children}
+      </div>;
+    }
+  }
+)
 ```

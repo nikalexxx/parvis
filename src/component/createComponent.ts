@@ -14,6 +14,7 @@ import { patchDOM } from './patchDOM';
 import { VDOMLightComponent, VDOMLightNode, diffVdomLight, prepareTempateTree, VDOMRefDom } from '../model';
 import { createLightElement } from '../light/element';
 import { findParentComponent } from './findParentComponent';
+import { addElementParent } from './addElementParent';
 
 function runEffects(effects: ComponentEffect[]): void {
   for (const effect of effects) effect();
@@ -104,7 +105,7 @@ export const createComponent = <P extends ComponentProps>(
 
   // console.log('createComponent', makeComponent.toString());
 
-  const render = makeComponent({
+  const rawRender = makeComponent({
     props: () => props,
     state: getStateClass(rerender, fn => effectMap.get(fn) ?? []),
     hooks: {
@@ -118,6 +119,8 @@ export const createComponent = <P extends ComponentProps>(
       },
     },
   });
+
+  const render = () => addElementParent(rawRender(props));
 
   function rerender() {
     if (!domData.ref) return;

@@ -1,5 +1,4 @@
-import { Component } from '../src/component/builder';
-import { H } from '../src/element/builder';
+import { Component } from 'parvis';
 
 export const Counter = Component<{ start: number }>(
   'Counter',
@@ -30,14 +29,14 @@ export const Counter = Component<{ start: number }>(
       const count = getCount();
       const { start } = props();
       const result = getResult();
-      return H.div(
-        `count: ${count}`,
-        H.button.onClick(inc)('+'),
-        H.button.onClick(dec)('-'),
-        H.div(`start: ${start}`),
-        H.div(`result = ${start} + ${count} = ${result}`),
-        result > 0 && H.div(`result > 0`)
-      );
+      return <div>
+        count: {count}
+        <button on:click={inc}>+</button>
+        <button on:click={dec}>-</button>
+        <div>start: {start}</div>
+        <div>result = {start} + {count} = {result}</div>
+        {result > 0 && <div>result {'>'} 0</div>}
+      </div>
     };
   }
 );
