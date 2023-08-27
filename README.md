@@ -172,12 +172,10 @@ Each component has a name and an setup function that returns a render function.
 
 **The render function should return only the html element and nothing else!**
 
-The arguments of the installation function are props, state, and hooks.
+The arguments of the setup function are props, state, and hooks.
 - `props` are passed to the component from the outside.
 - `state` is a generator of local states, returns a pair of getter + setter
 - `hooks` describe lifecycle methods such as `mount`, `destroy`, and `effect` (effect is a subscribing to state updates)
-
-The arguments of the render function are props, state, and hooks.
 
 ```tsx
 import {Component} from 'parvis';
