@@ -8,3 +8,4 @@ export * from './printComponentTree';
 export * from './runDestroy';
 export * from './state';
 export * from './symbols';
+export { debug } from './debug';

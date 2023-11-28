@@ -43,6 +43,6 @@ export const jsxDev = jsx;
 export const jsxDEV = jsx;
 export const jsxs = jsx;
 
-export function Fragment(props: any) {
-  return props.children;
+export function Fragment(props: any, children: any[]) {
+  return children;
 }
