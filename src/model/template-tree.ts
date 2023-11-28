@@ -34,7 +34,7 @@ export type TemplateTreeElement = CreateTarget<
 /**
  * общий вид верстки компонентов
  */
-export type TemplateTreeComponent<P extends ComponentProps = ComponentProps> =
+export type TemplateTreeComponent<P extends ComponentProps = any> =
   CreateTarget<
     MakeComponent<P> & { displayName: string },
     P,
@@ -51,10 +51,16 @@ export type ComponentFunction<P extends ComponentProps = {}> = ((
   C: TreeBuilder<TemplateTreeComponent<P>>;
 };
 
+export function isElementTemplate(
+  template: TemplateTree
+): template is TemplateTreeElement {
+  return !isPrimitive(template) && !Array.isArray(template) && Array.isArray(template.name);
+}
+
 export function isComponentTemplate(
-  template: TemplateTreeNode
+  template: TemplateTree
 ): template is TemplateTreeComponent {
-  return !isPrimitive(template) && typeof template.name === 'function';
+  return !isPrimitive(template) && !Array.isArray(template) && typeof template.name === 'function';
 }
 
 export function filterTemplateTreeNode(node: TemplateTreeNode): boolean {

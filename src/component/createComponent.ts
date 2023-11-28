@@ -8,13 +8,14 @@ import {
   VDOMComponent,
 } from './model';
 import { getStateClass } from './state';
-import { emptySymbol } from '../utils/diff';
+import { emptySymbol, printDiff } from '../utils/diff';
 import { componentSymbol } from './symbols';
 import { patchDOM } from './patchDOM';
 import { VDOMLightComponent, VDOMLightNode, diffVdomLight, prepareTempateTree, VDOMRefDom } from '../model';
 import { createLightElement } from '../light/element';
 import { findParentComponent } from './findParentComponent';
 import { addElementParent } from './addElementParent';
+import { DEBUG_MODE } from './debug';
 
 function runEffects(effects: ComponentEffect[]): void {
   for (const effect of effects) effect();
@@ -134,7 +135,7 @@ export const createComponent = <P extends ComponentProps>(
 
     // console.log('component/rerender', { lightDiff, lightVdom, light });
     // console.log(printComponentTree(component));
-    // printDiff(lightDiff);
+    if (DEBUG_MODE) printDiff(lightDiff);
     if (lightDiff === emptySymbol) return;
 
     // обновляем, если были изменения

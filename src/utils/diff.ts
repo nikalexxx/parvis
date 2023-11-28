@@ -91,8 +91,6 @@ export function diff<T1 extends unknown, T2 extends unknown>(
     // для функций заменяем всё, возможно стоит добавить другую проверку
     if (A === B) {
       return emptySymbol;
-    } else if (typeof B === 'function' && A.toString() === B.toString()) {
-      return emptySymbol;
     }
     return raw(B);
   }
@@ -186,7 +184,7 @@ function logDeleted(s: string): void {
 
 function removeEmpty<A, B>(diff: Diff<A, B>): Diff<A, B> {
   if (!isObject(diff)) return diff;
-  const newDiff = {...diff};
+  const newDiff = { ...diff };
   for (const name of Object.keys(diff)) {
     const subDiff = removeEmpty(diff[name]);
     if (subDiff === emptySymbol) {

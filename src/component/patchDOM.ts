@@ -67,7 +67,9 @@ export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
     const light = diffObject as VDOMLightNode;
 
     const content = getContentFromLight(light);
-    const newDom = DOMFromVdom(content); // FIXME: эффекты?
+    const effects: RenderEffect[] = [];
+
+    const newDom = DOMFromVdom(content, effects);
 
     parent.replaceChild(newDom, dom);
 
@@ -75,6 +77,9 @@ export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
       light.dom.ref = newDom;
       light.dom.parent = parent;
     }
+
+    // запуск эффектов только после обновления в dom
+    effects.forEach((effect) => effect());
 
     return;
   }
@@ -135,6 +140,7 @@ export function patchAttributes({
 }: PatchPropsParams): void {
   // пропускаем пустоту
   if (!isObject(diffAttributes)) return;
+  const element = dom[elementSymbol];
 
   for (const name in diffAttributes) {
     // console.log('patchDom/patchAttributes', {name})
@@ -143,6 +149,7 @@ export function patchAttributes({
     if (diffAttribute === emptySymbol) continue;
 
     if (diffAttribute === deleteSymbol) {
+      if (element) delete element.attributes[name];
       dom.removeAttribute(name);
       runDomAction(dom, name, false);
       continue;
@@ -150,6 +157,7 @@ export function patchAttributes({
 
     if (!isPrimitive(diffAttribute)) continue;
 
+    if (element) element.attributes[name] = diffAttribute;
     setAttribute(dom, name, diffAttribute);
   }
 }
@@ -170,13 +178,6 @@ export function patchEventListeners({
 
   // удаление старых перехватчиков событий
   const oldListeners = dom[elementSymbol]?.eventListeners ?? {};
-  // for (const eventName of Object.keys(oldListeners)) {
-  //   if (!(eventName in diffEventListeners)) {
-  //     console.log('patchDom/patchEventListeners/remove', {eventName})
-  //     dom.removeEventListener(eventName, oldListeners[eventName]);
-  //     delete oldListeners[eventName];
-  //   }
-  // }
 
   // обновление перехватчиков событий
   for (const eventName of Object.keys(diffEventListeners)) {
@@ -192,6 +193,7 @@ export function patchEventListeners({
 
     if (typeof listener !== 'function') continue;
 
+    oldListeners[eventName] = listener;
     dom.addEventListener(eventName, listener, false);
   }
 }
@@ -224,6 +226,7 @@ export function patchChildNodes({ dom, diffChildren }: PatchChildNodesParams) {
 
   // console.log({childOrder, oldNodes});
 
+  const deletionList: Node[] = [];
   for (let i = 0; i < oldNodes.length; i++) {
     const oldChild = oldNodes[i];
     const key = childOrder[i]; // TODO: поддержать логику с key
@@ -233,17 +236,19 @@ export function patchChildNodes({ dom, diffChildren }: PatchChildNodesParams) {
     if (strI in diffChildren) {
       const childDiff = diffChildren[strI as any];
       if (childDiff === deleteSymbol) {
-        // console.log('patchDom/patchChildNodes/remove', { childDiff });
-        const element = oldChild[elementSymbol];
-        // console.log({ oldChild, element });
-        // запускаем эффекты destroy перед удалением из dom
-        runDestroy(oldChild);
-        dom.removeChild(oldChild);
+        // собираем узлы на удаление, чтобы не нарушать порядок
+        deletionList.push(oldChild);
       } else {
         patchDOM(oldChild, childDiff as any);
         updatedChildKeys.add(strI);
       }
     }
+  }
+
+  for (const node of deletionList) {
+    // запускаем эффекты destroy перед удалением из dom
+    runDestroy(node);
+    dom.removeChild(node);
   }
 
   // добавление новых потомков
