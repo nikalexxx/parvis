@@ -7,6 +7,7 @@ import {
   diff,
   DiffByKeys,
   emptySymbol,
+  isDiffRaw,
   rawSymbol,
 } from '../utils/diff';
 import { isObject, isPrimitive, setType } from '../utils/type-helpers';
@@ -37,6 +38,9 @@ export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
     // слабые ссылки могли бы помочь
 
     // console.log('patchDOM/delete', { diffObject, dom });
+
+    // запуск хуков
+    runDestroy(dom);
 
     // стираем информацию о vdom
     delete dom[elementSymbol];
@@ -181,20 +185,38 @@ export function patchEventListeners({
 
   // обновление перехватчиков событий
   for (const eventName of Object.keys(diffEventListeners)) {
+    const oldListener = oldListeners[eventName];
     const listener = diffEventListeners[eventName];
 
     if (listener === emptySymbol) continue;
 
-    if (listener === deleteSymbol && oldListeners[eventName]) {
-      dom.removeEventListener(eventName, oldListeners[eventName]);
+    if (listener === deleteSymbol && oldListener) {
+      dom.removeEventListener(eventName, oldListener);
       delete oldListeners[eventName];
       continue;
     }
 
-    if (typeof listener !== 'function') continue;
+    let listenerFn: EventListener;
+    if (typeof listener === 'function') listenerFn = listener;
+    else if (isObject(listener) && 'handleEvent' in listener) {
+      if (isDiffRaw(listener.handleEvent)) {
+        listenerFn = listener.handleEvent as any;
+      } else {
+        if (listener.handleEvent === emptySymbol) continue;
+        if (listener.handleEvent === deleteSymbol && oldListener) {
+          dom.removeEventListener(eventName, oldListener);
+          delete oldListeners[eventName];
+          continue;
+        }
+        continue;
+      }
+    } else continue;
 
-    oldListeners[eventName] = listener;
-    dom.addEventListener(eventName, listener, false);
+    if (oldListener) {
+      oldListener.handleEvent = listenerFn;
+    } else {
+      dom.addEventListener(eventName, { handleEvent: listenerFn }, false);
+    }
   }
 }
 
@@ -213,7 +235,6 @@ export function patchChildNodes({ dom, diffChildren }: PatchChildNodesParams) {
   if (typeof diffChildren !== 'object') return;
   if (!(diff.symbols.array in diffChildren)) return;
   // обновление существующих потомков
-  // console.log('patchDom/patchChildNodes', { diffChildren });
 
   const element = dom[elementSymbol];
   if (!element) return;

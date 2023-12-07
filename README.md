@@ -113,6 +113,14 @@ const App = Component('App', ({ hooks, state }) => {
           double click
         </button>
       </div>
+      <h2>ref</h2>
+        <button
+          _ref={(el) => (ref = el)}
+          on:click={() => console.log("click from enter")}
+        >
+          ref
+        </button>
+        <button on:click={() => ref.focus()}>focus ref</button>
     </main>
 });
 ```
@@ -124,7 +132,10 @@ import {render} from 'parvis';
 import {App} from './App';
 
 // for <div id="root"></div>
-render('#root', <App />);
+const destroyApp = render('#root', <App />);
+
+// remove <App /> from <div id="root"></div>
+window.destroyApp = destroyApp;
 
 ```
 
@@ -166,11 +177,14 @@ Names that start with an underscore are reserved for technical properties, for e
 - `_html` to insert raw html. This is dangerous because there are no sanitizers!
 - `_attributes` to insert multiple attributes at once.
 
+Some attribute names relative with updating:
+- `_key` to insert node into parent by uniq key.
+- `_forceUpdate` to update without conditions.
+- `_skipUpdate` to freeze updating without conditions.
+
 ## Components
 
 Each component has a name and an setup function that returns a render function.
-
-**The render function should return only the html element and nothing else!**
 
 The arguments of the setup function are props, state, and hooks.
 - `props` are passed to the component from the outside.
@@ -189,9 +203,20 @@ const Text = Component<{size?: string}>( // type for internal props
       alert('hello');
     });
 
+    hooks.mount(() => {
+      console.log('mount text');
+    });
+    hooks.destroy(() => {
+      console.log('destroy text');
+    });
+
 
     // prepare state
     const [getText, setText] = state('hello'); // initial text `hello`
+
+    hooks.effect(() => {
+      console.log('change text');
+    }, [setText]);
 
     // handler
     const onTextClick = () => {
@@ -209,4 +234,24 @@ const Text = Component<{size?: string}>( // type for internal props
     }
   }
 )
+```
+
+### Debug mode
+Use `debug` function to enable debug mode
+
+```js
+debug(true);
+```
+
+After that, use prop `_debug` for component
+```tsx
+import {Component, render} from 'parvis';
+
+const Block = Component<{red?: boolean}>('block', () =>
+  ({children, red}) => <div style={red && 'color: red'}>{children}</div>
+);
+
+const block = <Block red _debug>text</Block>;
+
+render('body', block)
 ```

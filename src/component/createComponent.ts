@@ -7,15 +7,22 @@ import {
   ExternalComponentEffects,
   VDOMComponent,
 } from './model';
-import { getStateClass } from './state';
+import { StateClass, getStateClass } from './state';
 import { emptySymbol, printDiff } from '../utils/diff';
 import { componentSymbol } from './symbols';
 import { patchDOM } from './patchDOM';
-import { VDOMLightComponent, VDOMLightNode, diffVdomLight, prepareTempateTree, VDOMRefDom } from '../model';
+import {
+  VDOMLightComponent,
+  VDOMLightNode,
+  diffVdomLight,
+  prepareTempateTree,
+  VDOMRefDom,
+} from '../model';
 import { createLightElement } from '../light/element';
 import { findParentComponent } from './findParentComponent';
 import { addElementParent } from './addElementParent';
 import { DEBUG_MODE } from './debug';
+import { printComponentTree } from './printComponentTree';
 
 function runEffects(effects: ComponentEffect[]): void {
   for (const effect of effects) effect();
@@ -25,15 +32,14 @@ export type CreateComponentParams<P extends ComponentProps> = {
   light: VDOMLightComponent<P>;
 };
 
-export const createComponent = <P extends ComponentProps>(
-  { light }: CreateComponentParams<P>
-) => {
+export const createComponent = <P extends ComponentProps>({
+  light,
+}: CreateComponentParams<P>) => {
   const {
     name: componentName = 'Anonimous',
     get: makeComponent,
     template: { children: initialChildren, props: initialProps },
   } = light;
-
 
   let component: VDOMComponent = {} as any;
 
@@ -104,11 +110,17 @@ export const createComponent = <P extends ComponentProps>(
     },
   };
 
-  // console.log('createComponent', makeComponent.toString());
+  const stateList: StateClass<any>[] = [];
+
+  const stateClass = getStateClass(
+    rerender,
+    (fn) => effectMap.get(fn) ?? [],
+    (v) => stateList.push(v)
+  );
 
   const rawRender = makeComponent({
     props: () => props,
-    state: getStateClass(rerender, fn => effectMap.get(fn) ?? []),
+    state: stateClass,
     hooks: {
       mount: (callback) => hookCallbacks.mount.push(callback),
       destroy: (callback) => hookCallbacks.destroy.push(callback),
@@ -129,13 +141,16 @@ export const createComponent = <P extends ComponentProps>(
     const template = render();
     const light = createLightElement(template);
     if (!light.props) light.props = {};
-    light.props['data-name'] = componentName;
 
     const lightDiff = diffVdomLight(lightVdom, light);
 
-    // console.log('component/rerender', { lightDiff, lightVdom, light });
-    // console.log(printComponentTree(component));
-    if (DEBUG_MODE) printDiff(lightDiff);
+    if (DEBUG_MODE.enabled && props._debug) {
+      console.log(printComponentTree(component));
+      console.log(stateList.map((v) => v[0]()));
+      console.groupCollapsed(componentName);
+      printDiff(lightDiff);
+      console.groupEnd();
+    }
     if (lightDiff === emptySymbol) return;
 
     // обновляем, если были изменения

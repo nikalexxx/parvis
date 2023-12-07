@@ -28,7 +28,7 @@ export const Component: ComponentBuildRoot = (name, make) => {
     children: children as any,
   });
 
-  getComponent.C = builder;
+  getComponent.C = builder as any;
 
   return getComponent as any;
 };

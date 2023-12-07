@@ -29,6 +29,10 @@ export type ComponentState =
 /** общий вид внешних свойств компонента */
 export type ComponentProps = Record<string, any>;
 
+export type ComponentAdditioanlProps = {
+  _debug?: boolean;
+};
+
 type ComponentDiff = {
   props: VDOMLightComponent['props'] | typeof emptySymbol;
   children: VDOMLightComponent['children'] | typeof emptySymbol;
@@ -74,7 +78,8 @@ export function isComponent(e: unknown): e is VDOMComponent {
 
 export type ComponentInternalProps<P extends ComponentProps> = P & {
   children: TemplateTreeNode[];
-} & TreeProps;
+} & TreeProps &
+  ComponentAdditioanlProps;
 
 export type ComponentParams<P extends ComponentProps> = {
   props: () => ComponentInternalProps<P>;
@@ -97,12 +102,10 @@ export type ComponentRender = () => VDOMLightElement;
 
 /**
  * функция, которая явно возвращается из компонента при инициализации
- *
- * разрешены только элементы
  */
-export type ComponentGetTemplate<P extends ComponentProps> = (props?: ComponentInternalProps<P>) =>
-  | TemplateTreeElement
-  | TemplateTreeComponent;
+export type ComponentGetTemplate<P extends ComponentProps> = (
+  props?: ComponentInternalProps<P>
+) => TemplateTreeElement | TemplateTreeComponent;
 
 /**
  * функция, описывающая поведение компонента

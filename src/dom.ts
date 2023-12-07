@@ -1,4 +1,4 @@
-import { isComponent } from './component';
+import { isComponent, runDestroy } from './component';
 import { createLightNode } from './light/light';
 // import { log } from './utils/log';
 import { getContentFromLight } from './materialize/materializeVDOMLight';
@@ -29,7 +29,7 @@ export function isElement(node: Node): node is Element {
 export function render(
   target: Element | string,
   content: TemplateTreeNode
-): void {
+): () => void {
   const targetElement =
     typeof target === 'string' ? document.querySelector(target) : target;
   if (!targetElement) throw 'target doesnt exist';
@@ -42,6 +42,15 @@ export function render(
 
   // запуск эффектов (в основном монтирования)
   effects.forEach((effect) => effect());
+
+  let destoyed = false;
+
+  return () => {
+    if (destoyed) return;
+    runDestroy(dom);
+    targetElement.removeChild(dom);
+    destoyed = true;
+  };
 }
 
 export function DOM(
