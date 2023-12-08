@@ -67,7 +67,7 @@ export type VDOMComponent<P extends ComponentProps = ComponentProps> =
     props: P; // свойства
     effects: ComponentEffects;
     externalEffects: ExternalComponentEffects;
-    childComponents: VDOMComponent[]; // дочерние компоненты после материализации
+    childComponents: Set<VDOMComponent>; // дочерние компоненты после материализации
 
     [componentSymbol]: true; // символ, однозначно позволяет определить компонент
   };
@@ -81,8 +81,12 @@ export type ComponentInternalProps<P extends ComponentProps> = P & {
 } & TreeProps &
   ComponentAdditioanlProps;
 
+export type ComponentInternalPropsGetters<P extends ComponentProps> = {
+  [K in keyof ComponentInternalProps<P>]: () => ComponentInternalProps<P>[K];
+}
+
 export type ComponentParams<P extends ComponentProps> = {
-  props: () => ComponentInternalProps<P>;
+  props: (() => ComponentInternalProps<P>) & ComponentInternalPropsGetters<P>;
   state: StateCreator;
   hooks: {
     mount: ComponentEffectSetup;
@@ -104,7 +108,7 @@ export type ComponentRender = () => VDOMLightElement;
  * функция, которая явно возвращается из компонента при инициализации
  */
 export type ComponentGetTemplate<P extends ComponentProps> = (
-  props?: ComponentInternalProps<P>
+  props: ComponentInternalProps<P>
 ) => TemplateTreeElement | TemplateTreeComponent;
 
 /**

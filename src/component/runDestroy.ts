@@ -25,21 +25,31 @@ export function runDestroy(node: Node): void {
   const element = node[elementSymbol];
   if (!element) return;
 
+  // ищем ближайшего родителя
+  const parentComponentNode = findParentComponent(node);
+  const usedChildComponents = parentComponentNode?.component?.childComponents;
+
   const component = element.component;
   if (component) {
     // попали точно в компонент
     runDestroyHooks(component);
+
+    if (usedChildComponents?.has(component)) {
+      usedChildComponents.delete(component);
+    }
     return;
   }
 
-  // ищем ближайшего родителя
-  const data = findParentComponent(node);
-  if (!data) return;
-  data.component.childComponents.forEach((childComponent) => {
+  if (!usedChildComponents) return;
+  usedChildComponents.forEach((childComponent) => {
     // проверяем что дочерние компоненты внутри текущей ноды
-    if (checkComponentScope(childComponent, node, data.domElement)) {
+    if (
+      checkComponentScope(childComponent, node, parentComponentNode.domElement)
+    ) {
       // если внутри, то запускаем хуки удаления
       runDestroyHooks(childComponent);
+
+      usedChildComponents.delete(childComponent);
     }
   });
 }

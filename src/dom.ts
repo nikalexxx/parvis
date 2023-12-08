@@ -137,7 +137,6 @@ export function DOMFromVdom(
 
   // обработка событий
   for (const eventName of Object.keys(eventListeners)) {
-    // TODO: когда отписываться?
     domElement.addEventListener(eventName, eventListeners[eventName], false);
   }
 

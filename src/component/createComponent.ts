@@ -3,6 +3,7 @@ import {
   ComponentEffect,
   ComponentEffects,
   ComponentInternalProps,
+  ComponentParams,
   ComponentProps,
   ExternalComponentEffects,
   VDOMComponent,
@@ -99,7 +100,8 @@ export const createComponent = <P extends ComponentProps>({
         domData.parent = parent;
         const { component: parentComponent } =
           findParentComponent(parent) ?? {};
-        if (parentComponent) parentComponent.childComponents.push(component);
+        if (parentComponent && !parentComponent.childComponents.has(component))
+          parentComponent.childComponents.add(component);
       }
     },
     updateLight: (light) => {
@@ -118,8 +120,20 @@ export const createComponent = <P extends ComponentProps>({
     (v) => stateList.push(v)
   );
 
+  const propsUpdateMap: Map<string, () => any> = new Map();
+  const internalProps = new Proxy(
+    (() => props) as ComponentParams<P>['props'],
+    {
+      get(target, key: string) {
+        const getter = () => props[key as any];
+        if (!propsUpdateMap.has(key)) propsUpdateMap.set(key, getter);
+        return getter;
+      },
+    }
+  );
+
   const rawRender = makeComponent({
-    props: () => props,
+    props: internalProps,
     state: stateClass,
     hooks: {
       mount: (callback) => hookCallbacks.mount.push(callback),
@@ -133,7 +147,11 @@ export const createComponent = <P extends ComponentProps>({
     },
   });
 
-  const render = () => addElementParent(rawRender(props));
+  const render = () => {
+    const element = addElementParent(rawRender(props));
+    element.props['data-component'] = componentName;
+    return element;
+  };
 
   function rerender() {
     if (!domData.ref) return;
@@ -169,19 +187,37 @@ export const createComponent = <P extends ComponentProps>({
     const { children: newChildren, props: newPropsValue } = template;
     const isEmptyChildren = checkChildren === emptySymbol;
     const isEmptyProps = checkProps === emptySymbol;
+    let newProps: ComponentInternalProps<P> = { ...props };
     if (isEmptyChildren) {
       // поменялись только свойства
-      props = { ...(newPropsValue as any), children: props.children };
+      newProps = { ...(newPropsValue as any), children: props.children };
     } else if (isEmptyProps) {
       // поменялись только дети
-      props.children = prepareTempateTree(newChildren);
+      newProps.children = prepareTempateTree(newChildren);
     } else {
-      props = {
+      newProps = {
         ...(newPropsValue as any),
         children: prepareTempateTree(newChildren),
       };
     }
+    const oldProps = props;
+    props = newProps;
+
     rerender();
+
+    for (const propName of Array.from(
+      new Set([...Object.keys(oldProps), ...Object.keys(newProps)])
+    )) {
+      const oldValue = oldProps[propName];
+      const newValue = newProps[propName];
+      if (oldValue !== newValue) {
+        const usedGetter = propsUpdateMap.get(propName);
+        if (!usedGetter) continue;
+        const effectList = effectMap.get(usedGetter);
+        if (!effectList) continue;
+        effectList.forEach((effect) => effect());
+      }
+    }
   };
 
   Object.assign(component, {
@@ -195,7 +231,7 @@ export const createComponent = <P extends ComponentProps>({
     applyDiff,
     effects,
     externalEffects,
-    childComponents: [],
+    childComponents: new Set(),
   });
 
   return component;

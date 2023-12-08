@@ -75,6 +75,8 @@ export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
 
     const newDom = DOMFromVdom(content, effects);
 
+    console.log({light});
+
     parent.replaceChild(newDom, dom);
 
     if (isVDOMElement(light)) {
@@ -233,7 +235,7 @@ export function patchChildNodes({ dom, diffChildren }: PatchChildNodesParams) {
   }
 
   if (typeof diffChildren !== 'object') return;
-  if (!(diff.symbols.array in diffChildren)) return;
+  if (!(arraySymbol in diffChildren)) return;
   // обновление существующих потомков
 
   const element = dom[elementSymbol];
