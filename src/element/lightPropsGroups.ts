@@ -29,7 +29,7 @@ export function groupLightProps(props: VDOMLightProps): GroupedLightProps {
       ) {
         console.error(new Error(`${eventName} listener is unknown`), value);
       }
-      grouped.eventListeners[eventName] = value;
+      grouped.eventListeners[eventName] = {handleEvent: value};
     } else {
       grouped.attributes[propName] = value;
     }

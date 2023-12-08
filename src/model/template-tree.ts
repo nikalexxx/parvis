@@ -1,6 +1,10 @@
 import { CommonProps, CreateTarget, TreeBuilder } from 'dot-tree-syntax';
 
-import type { ComponentProps, MakeComponent } from '../component';
+import type {
+  ComponentAdditioanlProps,
+  ComponentProps,
+  MakeComponent,
+} from '../component';
 import { DOMNamespace } from './namespace';
 import { Primitive, isPrimitive } from '../utils';
 import { TreeProps } from './tree-props';
@@ -37,7 +41,7 @@ export type TemplateTreeElement = CreateTarget<
 export type TemplateTreeComponent<P extends ComponentProps = any> =
   CreateTarget<
     MakeComponent<P> & { displayName: string },
-    P,
+    P & TreeProps & ComponentAdditioanlProps,
     TemplateTreeNodeChildSettings
   >;
 
@@ -45,7 +49,7 @@ export type TemplateTreeComponent<P extends ComponentProps = any> =
  * функция сборки компонента, в первую очередь для jsx
  */
 export type ComponentFunction<P extends ComponentProps = {}> = ((
-  props: P & TreeProps,
+  props: P & TreeProps & ComponentAdditioanlProps,
   children: TemplateTree
 ) => TemplateTreeComponent<P>) & {
   C: TreeBuilder<TemplateTreeComponent<P>>;
@@ -54,13 +58,21 @@ export type ComponentFunction<P extends ComponentProps = {}> = ((
 export function isElementTemplate(
   template: TemplateTree
 ): template is TemplateTreeElement {
-  return !isPrimitive(template) && !Array.isArray(template) && Array.isArray(template.name);
+  return (
+    !isPrimitive(template) &&
+    !Array.isArray(template) &&
+    Array.isArray(template.name)
+  );
 }
 
 export function isComponentTemplate(
   template: TemplateTree
 ): template is TemplateTreeComponent {
-  return !isPrimitive(template) && !Array.isArray(template) && typeof template.name === 'function';
+  return (
+    !isPrimitive(template) &&
+    !Array.isArray(template) &&
+    typeof template.name === 'function'
+  );
 }
 
 export function filterTemplateTreeNode(node: TemplateTreeNode): boolean {

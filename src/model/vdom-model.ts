@@ -60,7 +60,7 @@ export type VDOMElement<N extends DOMNamespace = DOMNamespace> = VDOMNode & VDOM
     attributes: Record<string, Primitive>;
 
     /** обработчики событий */
-    eventListeners: Record<string, EventListener>;
+    eventListeners: Record<string, EventListenerObject>;
 
     /** технические свойства */
     utilityProps: CustomProps & TreeProps;

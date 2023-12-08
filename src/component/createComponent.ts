@@ -3,19 +3,27 @@ import {
   ComponentEffect,
   ComponentEffects,
   ComponentInternalProps,
+  ComponentParams,
   ComponentProps,
   ExternalComponentEffects,
   VDOMComponent,
 } from './model';
-import { getStateClass } from './state';
+import { StateClass, getStateClass } from './state';
 import { emptySymbol, printDiff } from '../utils/diff';
 import { componentSymbol } from './symbols';
 import { patchDOM } from './patchDOM';
-import { VDOMLightComponent, VDOMLightNode, diffVdomLight, prepareTempateTree, VDOMRefDom } from '../model';
+import {
+  VDOMLightComponent,
+  VDOMLightNode,
+  diffVdomLight,
+  prepareTempateTree,
+  VDOMRefDom,
+} from '../model';
 import { createLightElement } from '../light/element';
 import { findParentComponent } from './findParentComponent';
 import { addElementParent } from './addElementParent';
 import { DEBUG_MODE } from './debug';
+import { printComponentTree } from './printComponentTree';
 
 function runEffects(effects: ComponentEffect[]): void {
   for (const effect of effects) effect();
@@ -25,15 +33,14 @@ export type CreateComponentParams<P extends ComponentProps> = {
   light: VDOMLightComponent<P>;
 };
 
-export const createComponent = <P extends ComponentProps>(
-  { light }: CreateComponentParams<P>
-) => {
+export const createComponent = <P extends ComponentProps>({
+  light,
+}: CreateComponentParams<P>) => {
   const {
     name: componentName = 'Anonimous',
     get: makeComponent,
     template: { children: initialChildren, props: initialProps },
   } = light;
-
 
   let component: VDOMComponent = {} as any;
 
@@ -93,7 +100,8 @@ export const createComponent = <P extends ComponentProps>(
         domData.parent = parent;
         const { component: parentComponent } =
           findParentComponent(parent) ?? {};
-        if (parentComponent) parentComponent.childComponents.push(component);
+        if (parentComponent && !parentComponent.childComponents.has(component))
+          parentComponent.childComponents.add(component);
       }
     },
     updateLight: (light) => {
@@ -104,11 +112,29 @@ export const createComponent = <P extends ComponentProps>(
     },
   };
 
-  // console.log('createComponent', makeComponent.toString());
+  const stateList: StateClass<any>[] = [];
+
+  const stateClass = getStateClass(
+    rerender,
+    (fn) => effectMap.get(fn) ?? [],
+    (v) => stateList.push(v)
+  );
+
+  const propsUpdateMap: Map<string, () => any> = new Map();
+  const internalProps = new Proxy(
+    (() => props) as ComponentParams<P>['props'],
+    {
+      get(target, key: string) {
+        const getter = () => props[key as any];
+        if (!propsUpdateMap.has(key)) propsUpdateMap.set(key, getter);
+        return getter;
+      },
+    }
+  );
 
   const rawRender = makeComponent({
-    props: () => props,
-    state: getStateClass(rerender, fn => effectMap.get(fn) ?? []),
+    props: internalProps,
+    state: stateClass,
     hooks: {
       mount: (callback) => hookCallbacks.mount.push(callback),
       destroy: (callback) => hookCallbacks.destroy.push(callback),
@@ -121,7 +147,11 @@ export const createComponent = <P extends ComponentProps>(
     },
   });
 
-  const render = () => addElementParent(rawRender(props));
+  const render = () => {
+    const element = addElementParent(rawRender(props));
+    element.props['data-component'] = componentName;
+    return element;
+  };
 
   function rerender() {
     if (!domData.ref) return;
@@ -129,13 +159,16 @@ export const createComponent = <P extends ComponentProps>(
     const template = render();
     const light = createLightElement(template);
     if (!light.props) light.props = {};
-    light.props['data-name'] = componentName;
 
     const lightDiff = diffVdomLight(lightVdom, light);
 
-    // console.log('component/rerender', { lightDiff, lightVdom, light });
-    // console.log(printComponentTree(component));
-    if (DEBUG_MODE) printDiff(lightDiff);
+    if (DEBUG_MODE.enabled && props._debug) {
+      console.log(printComponentTree(component));
+      console.log(stateList.map((v) => v[0]()));
+      console.groupCollapsed(componentName);
+      printDiff(lightDiff);
+      console.groupEnd();
+    }
     if (lightDiff === emptySymbol) return;
 
     // обновляем, если были изменения
@@ -154,19 +187,37 @@ export const createComponent = <P extends ComponentProps>(
     const { children: newChildren, props: newPropsValue } = template;
     const isEmptyChildren = checkChildren === emptySymbol;
     const isEmptyProps = checkProps === emptySymbol;
+    let newProps: ComponentInternalProps<P> = { ...props };
     if (isEmptyChildren) {
       // поменялись только свойства
-      props = { ...(newPropsValue as any), children: props.children };
+      newProps = { ...(newPropsValue as any), children: props.children };
     } else if (isEmptyProps) {
       // поменялись только дети
-      props.children = prepareTempateTree(newChildren);
+      newProps.children = prepareTempateTree(newChildren);
     } else {
-      props = {
+      newProps = {
         ...(newPropsValue as any),
         children: prepareTempateTree(newChildren),
       };
     }
+    const oldProps = props;
+    props = newProps;
+
     rerender();
+
+    for (const propName of Array.from(
+      new Set([...Object.keys(oldProps), ...Object.keys(newProps)])
+    )) {
+      const oldValue = oldProps[propName];
+      const newValue = newProps[propName];
+      if (oldValue !== newValue) {
+        const usedGetter = propsUpdateMap.get(propName);
+        if (!usedGetter) continue;
+        const effectList = effectMap.get(usedGetter);
+        if (!effectList) continue;
+        effectList.forEach((effect) => effect());
+      }
+    }
   };
 
   Object.assign(component, {
@@ -180,7 +231,7 @@ export const createComponent = <P extends ComponentProps>(
     applyDiff,
     effects,
     externalEffects,
-    childComponents: [],
+    childComponents: new Set(),
   });
 
   return component;

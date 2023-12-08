@@ -29,6 +29,10 @@ export type ComponentState =
 /** общий вид внешних свойств компонента */
 export type ComponentProps = Record<string, any>;
 
+export type ComponentAdditioanlProps = {
+  _debug?: boolean;
+};
+
 type ComponentDiff = {
   props: VDOMLightComponent['props'] | typeof emptySymbol;
   children: VDOMLightComponent['children'] | typeof emptySymbol;
@@ -63,7 +67,7 @@ export type VDOMComponent<P extends ComponentProps = ComponentProps> =
     props: P; // свойства
     effects: ComponentEffects;
     externalEffects: ExternalComponentEffects;
-    childComponents: VDOMComponent[]; // дочерние компоненты после материализации
+    childComponents: Set<VDOMComponent>; // дочерние компоненты после материализации
 
     [componentSymbol]: true; // символ, однозначно позволяет определить компонент
   };
@@ -74,10 +78,15 @@ export function isComponent(e: unknown): e is VDOMComponent {
 
 export type ComponentInternalProps<P extends ComponentProps> = P & {
   children: TemplateTreeNode[];
-} & TreeProps;
+} & TreeProps &
+  ComponentAdditioanlProps;
+
+export type ComponentInternalPropsGetters<P extends ComponentProps> = {
+  [K in keyof ComponentInternalProps<P>]: () => ComponentInternalProps<P>[K];
+}
 
 export type ComponentParams<P extends ComponentProps> = {
-  props: () => ComponentInternalProps<P>;
+  props: (() => ComponentInternalProps<P>) & ComponentInternalPropsGetters<P>;
   state: StateCreator;
   hooks: {
     mount: ComponentEffectSetup;
@@ -97,12 +106,10 @@ export type ComponentRender = () => VDOMLightElement;
 
 /**
  * функция, которая явно возвращается из компонента при инициализации
- *
- * разрешены только элементы
  */
-export type ComponentGetTemplate<P extends ComponentProps> = (props?: ComponentInternalProps<P>) =>
-  | TemplateTreeElement
-  | TemplateTreeComponent;
+export type ComponentGetTemplate<P extends ComponentProps> = (
+  props: ComponentInternalProps<P>
+) => TemplateTreeElement | TemplateTreeComponent;
 
 /**
  * функция, описывающая поведение компонента

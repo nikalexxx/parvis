@@ -36,7 +36,7 @@ export function jsx(
     };
   }
 
-  return tag(props, childList);
+  return tag(props as any, childList);
 }
 
 export const jsxDev = jsx;

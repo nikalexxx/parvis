@@ -1,8 +1,10 @@
-import { Component, H } from "parvis";
+import { Component, H, debug } from "parvis";
 import { Counter } from "./Counter";
 import { TreeItem } from "./TreeItem";
 
 import css from "./App.module.css";
+
+debug(true);
 
 export const RedBox = Component<{ className?: string }>("RedBox", () => {
   return ({ className, children }) => {

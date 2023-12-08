@@ -1,5 +1,5 @@
-export let DEBUG_MODE = false;
+export const DEBUG_MODE = { enabled: false };
 
 export function debug(mode: boolean) {
-  DEBUG_MODE = mode;
+  DEBUG_MODE.enabled = mode;
 }
