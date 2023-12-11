@@ -2,7 +2,7 @@ import { elementSymbol } from '../symbols';
 import { ComponentBindedDOMData } from './model';
 
 export function findParentComponent(node: Node): ComponentBindedDOMData | null {
-  let currentNode: Node | null = node;
+  let currentNode: Node | null = node.parentNode;
   while (currentNode !== null) {
     const element = currentNode[elementSymbol];
     if (element?.component) {

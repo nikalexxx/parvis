@@ -63,6 +63,8 @@ export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
 
     // заменяем содержимое на текстовую ноду
     if (isElement(dom)) {
+      runDestroy(dom);
+
       parent.replaceChild(document.createTextNode(text), dom);
     }
     return;
@@ -76,7 +78,7 @@ export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
 
     const newDom = DOMFromVdom(content, effects);
 
-    console.log({light});
+    runDestroy(dom);
 
     parent.replaceChild(newDom, dom);
 

@@ -26,3 +26,7 @@ export const isPrimitive = <T>(value: T): value is Primitive & T => {
 export function isObject<T>(e: T): e is T & object {
     return e !== null && typeof e === 'object';
 }
+
+export function isFunction<T>(e: T): e is T & ((...args: any[]) => any) {
+  return typeof e === 'function';
+}

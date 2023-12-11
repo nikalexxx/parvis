@@ -160,10 +160,13 @@ export const createComponent = <P extends ComponentProps>({
     const lightDiff = diffVdomLight(lightVdom, light);
 
     if (DEBUG_MODE.enabled && props._debug) {
-      console.log({template, light, lightVdom, lightDiff});
+      console.groupCollapsed('old state: ' + componentName);
+
       console.log(printComponentTree(component));
       console.log(stateList.map((v) => v[0]()));
-      console.groupCollapsed(componentName);
+      console.groupEnd();
+      console.groupCollapsed('diff: ' + componentName);
+      console.log({ template, light, lightVdom, lightDiff });
       printDiff(lightDiff);
       console.groupEnd();
     }
@@ -173,6 +176,14 @@ export const createComponent = <P extends ComponentProps>({
     lightVdom = light;
 
     patchDOM(domData.ref, lightDiff);
+
+    if (DEBUG_MODE.enabled && props._debug) {
+      console.groupCollapsed('new state: ' + componentName);
+
+      console.log(printComponentTree(component));
+      console.log(stateList.map((v) => v[0]()));
+      console.groupEnd();
+    }
   }
 
   const applyDiff: VDOMComponent['applyDiff'] = (componentDiff) => {
