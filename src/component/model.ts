@@ -33,7 +33,7 @@ export type ComponentAdditioanlProps = {
   _debug?: boolean;
 };
 
-type ComponentDiff = {
+export type ComponentDiff = {
   props: VDOMLightComponent['props'] | typeof emptySymbol;
   children: VDOMLightComponent['children'] | typeof emptySymbol;
   template: VDOMLightComponent['template'];

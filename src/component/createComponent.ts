@@ -24,10 +24,8 @@ import { findParentComponent } from './findParentComponent';
 import { addElementParent } from './addElementParent';
 import { DEBUG_MODE } from './debug';
 import { printComponentTree } from './printComponentTree';
-
-function runEffects(effects: ComponentEffect[]): void {
-  for (const effect of effects) effect();
-}
+import { runEffects } from './effects';
+import { getNewProps, runPropsEffects } from './applyDiff';
 
 export type CreateComponentParams<P extends ComponentProps> = {
   light: VDOMLightComponent<P>;
@@ -79,8 +77,6 @@ export const createComponent = <P extends ComponentProps>({
         return;
       }
 
-      // console.log('createComponent', { hookCallbacks });
-
       runEffects(hookCallbacks[name]);
       handlers[name].bump();
     };
@@ -125,8 +121,9 @@ export const createComponent = <P extends ComponentProps>({
     (() => props) as ComponentParams<P>['props'],
     {
       get(target, key: string) {
+        if (propsUpdateMap.has(key)) return propsUpdateMap.get(key);
         const getter = () => props[key as any];
-        if (!propsUpdateMap.has(key)) propsUpdateMap.set(key, getter);
+        propsUpdateMap.set(key, getter);
         return getter;
       },
     }
@@ -163,9 +160,13 @@ export const createComponent = <P extends ComponentProps>({
     const lightDiff = diffVdomLight(lightVdom, light);
 
     if (DEBUG_MODE.enabled && props._debug) {
+      console.groupCollapsed('old state: ' + componentName);
+
       console.log(printComponentTree(component));
       console.log(stateList.map((v) => v[0]()));
-      console.groupCollapsed(componentName);
+      console.groupEnd();
+      console.groupCollapsed('diff: ' + componentName);
+      console.log({ template, light, lightVdom, lightDiff });
       printDiff(lightDiff);
       console.groupEnd();
     }
@@ -175,49 +176,32 @@ export const createComponent = <P extends ComponentProps>({
     lightVdom = light;
 
     patchDOM(domData.ref, lightDiff);
+
+    if (DEBUG_MODE.enabled && props._debug) {
+      console.groupCollapsed('new state: ' + componentName);
+
+      console.log(printComponentTree(component));
+      console.log(stateList.map((v) => v[0]()));
+      console.groupEnd();
+    }
   }
 
   const applyDiff: VDOMComponent['applyDiff'] = (componentDiff) => {
     // достаточно raw объекта light, так как потом компонент сам вычислит diff
-    const {
-      template,
-      children: checkChildren,
-      props: checkProps,
-    } = componentDiff;
-    const { children: newChildren, props: newPropsValue } = template;
-    const isEmptyChildren = checkChildren === emptySymbol;
-    const isEmptyProps = checkProps === emptySymbol;
-    let newProps: ComponentInternalProps<P> = { ...props };
-    if (isEmptyChildren) {
-      // поменялись только свойства
-      newProps = { ...(newPropsValue as any), children: props.children };
-    } else if (isEmptyProps) {
-      // поменялись только дети
-      newProps.children = prepareTempateTree(newChildren);
-    } else {
-      newProps = {
-        ...(newPropsValue as any),
-        children: prepareTempateTree(newChildren),
-      };
-    }
+    const newProps: ComponentInternalProps<P> = getNewProps(
+      componentDiff,
+      props
+    );
+
     const oldProps = props;
     props = newProps;
 
     rerender();
 
-    for (const propName of Array.from(
-      new Set([...Object.keys(oldProps), ...Object.keys(newProps)])
-    )) {
-      const oldValue = oldProps[propName];
-      const newValue = newProps[propName];
-      if (oldValue !== newValue) {
-        const usedGetter = propsUpdateMap.get(propName);
-        if (!usedGetter) continue;
-        const effectList = effectMap.get(usedGetter);
-        if (!effectList) continue;
-        effectList.forEach((effect) => effect());
-      }
-    }
+    runPropsEffects(oldProps, props, (name) => {
+      const propUpdateGetter = propsUpdateMap.get(name);
+      return propUpdateGetter ? effectMap.get(propUpdateGetter) ?? null : null;
+    });
   };
 
   Object.assign(component, {

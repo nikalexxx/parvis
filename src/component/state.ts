@@ -1,4 +1,5 @@
 import { GetPrimitiveFromLiteral } from '../utils';
+import { runEffects } from './effects';
 import { ComponentState } from './model';
 
 export type StateUpdater<S> = S | ((prev: S) => S);
@@ -33,7 +34,7 @@ export function getStateClass(
       rerender();
 
       // эффекты уже после перерисовки
-      getEffects(setState).forEach((effect) => effect());
+      runEffects(getEffects(setState));
     }
 
     const stateClass: StateClass<GetPrimitiveFromLiteral<S>> = [

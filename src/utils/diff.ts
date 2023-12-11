@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { isObject, isPrimitive, Primitive } from './type-helpers';
+import { isFunction, isObject, isPrimitive, Primitive } from './type-helpers';
 
 export const deleteSymbol = Symbol('delete');
 export type DeleteSymbol = typeof deleteSymbol;
@@ -74,7 +74,7 @@ export const raw = <T, U = any>(value: T): T & Diff<U, T> => {
 };
 
 export function isDiffRaw<A, B, D extends Diff<A, B>>(diff: D | B): diff is B {
-  return isObject(diff) && rawSymbol in diff;
+  return (isObject(diff) || isFunction(diff)) && rawSymbol in diff;
 }
 
 export function diff<T1 extends unknown, T2 extends unknown>(
@@ -207,6 +207,10 @@ export function printDiff<A, B>(rawdiff: Diff<A, B>): void {
     return;
   }
   if (rawSymbol in cleanDiff) {
+    if (typeof cleanDiff === 'function') {
+      logNewValue(cleanDiff.toString());
+      return;
+    }
     logAdded(JSON.stringify(cleanDiff, null, 2));
     return;
   }

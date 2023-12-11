@@ -34,22 +34,21 @@ export function runDestroy(node: Node): void {
     // попали точно в компонент
     runDestroyHooks(component);
 
-    if (usedChildComponents?.has(component)) {
-      usedChildComponents.delete(component);
-    }
+    usedChildComponents?.delete(component);
+
     return;
   }
 
   if (!usedChildComponents) return;
-  usedChildComponents.forEach((childComponent) => {
+
+  for (const childComponent of usedChildComponents) {
     // проверяем что дочерние компоненты внутри текущей ноды
     if (
       checkComponentScope(childComponent, node, parentComponentNode.domElement)
     ) {
       // если внутри, то запускаем хуки удаления
       runDestroyHooks(childComponent);
-
       usedChildComponents.delete(childComponent);
     }
-  });
+  }
 }

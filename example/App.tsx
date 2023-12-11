@@ -26,6 +26,7 @@ export const App = Component("App", ({ hooks, state }) => {
   const [option, setOption] = state("A" as Options[number]);
 
   let ref: HTMLElement;
+  const focusRef = () => ref.focus();
 
   return () => (
     <main class={css.app}>
@@ -106,7 +107,7 @@ export const App = Component("App", ({ hooks, state }) => {
         >
           ref
         </button>
-        <button on:click={() => ref.focus()}>focus ref</button>
+        <button on:click={focusRef} >focus ref</button>
       </RedBox>
     </main>
   );

@@ -41,6 +41,7 @@ export function diffVdomLight(
       B.children ?? [],
       diffVdomLight
     );
+
     const isEmptyDiffProps = diffProps === emptySymbol;
     const isEmptyDiffChildren = diffChildren === emptySymbol;
 
@@ -51,7 +52,9 @@ export function diffVdomLight(
     const componentDiff: Diff<VDOMLightComponent, VDOMLightComponent> = {
       ...B,
     } as Diff<VDOMLightComponent, VDOMLightComponent>;
-    (componentDiff as any).props = isEmptyDiffProps ? emptySymbol : raw(B.props);
+    (componentDiff as any).props = isEmptyDiffProps
+      ? emptySymbol
+      : raw(B.props);
     (componentDiff as any).children = isEmptyDiffChildren
       ? emptySymbol
       : raw(B.children ?? []);
@@ -71,9 +74,19 @@ export function diffVdomLight(
   if (A.namespace !== B.namespace) return raw(B);
   if (A.tagName !== B.tagName) return raw(B);
 
+  const diffElementProps = diff(A.props ?? {}, B.props ?? {});
+  const diffElementChildren = diffArray(
+    A.children ?? [],
+    B.children ?? [],
+    diffVdomLight
+  );
+
+  if (diffElementProps === emptySymbol && diffElementChildren === emptySymbol)
+    return emptySymbol;
+
   const fDiff: DiffByKeys<VDOMLightElement, VDOMLightElement> = {
-    props: diff(A.props ?? {}, B.props ?? {}),
-    children: diffArray(A.children ?? [], B.children ?? [], diffVdomLight),
+    props: diffElementProps,
+    children: diffElementChildren,
     tagName: emptySymbol,
     namespace: emptySymbol,
   };
