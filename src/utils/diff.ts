@@ -207,6 +207,10 @@ export function printDiff<A, B>(rawdiff: Diff<A, B>): void {
     return;
   }
   if (rawSymbol in cleanDiff) {
+    if (typeof cleanDiff === 'function') {
+      logNewValue(cleanDiff.toString());
+      return;
+    }
     logAdded(JSON.stringify(cleanDiff, null, 2));
     return;
   }

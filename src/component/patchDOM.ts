@@ -24,6 +24,7 @@ import {
   VDOMElementAttributes,
   isVDOMElement,
 } from '../model';
+import { runEffects } from './effects';
 
 /** Точечное изменение dom по diff */
 export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
@@ -85,7 +86,7 @@ export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
     }
 
     // запуск эффектов только после обновления в dom
-    effects.forEach((effect) => effect());
+    runEffects(effects);
 
     return;
   }
@@ -97,7 +98,6 @@ export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
   if ('get' in diffObject) {
     // изменение компонента
     const { component } = dom[elementSymbol] ?? {};
-    // console.log('patchDom/component', { component, diffObject });
     if (!component) return; // ошибка
 
     // компонент сам разбирается с обновлением
@@ -301,6 +301,6 @@ export function patchChildNodes({ dom, diffChildren }: PatchChildNodesParams) {
     dom.append(...newChildren);
 
     // запуск эффектов только после появления в dom
-    effects.forEach((effect) => effect());
+    runEffects(effects);
   }
 }

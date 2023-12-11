@@ -1,4 +1,4 @@
-import { isComponent, runDestroy } from './component';
+import { isComponent, runDestroy, runEffects } from './component';
 import { createLightNode } from './light/light';
 // import { log } from './utils/log';
 import { getContentFromLight } from './materialize/materializeVDOMLight';
@@ -41,7 +41,7 @@ export function render(
   // console.log('render', { effects });
 
   // запуск эффектов (в основном монтирования)
-  effects.forEach((effect) => effect());
+  runEffects(effects);
 
   let destoyed = false;
 

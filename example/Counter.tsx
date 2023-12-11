@@ -25,6 +25,11 @@ export const Counter = Component<{ start: number }>(
       console.log("count = ", getCount());
     }, [setCount]);
 
+    hooks.effect(() => {
+      console.log("props changed");
+      console.log("start = ", props.start());
+    }, [props.start])
+
     return ({ start }) => {
       const count = getCount();
       // const { start } = props();
