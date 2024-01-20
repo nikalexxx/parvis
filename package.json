@@ -1,6 +1,6 @@
 {
   "name": "parvis",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "Light library for user interface",
   "main": "./dist/index.cjs.js",
   "module": "./dist/index.js",
@@ -32,8 +32,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build-jsx": "vite build --config vite.config.jsx.ts"
+    "build": "vite build"
   },
   "author": "",
   "license": "MIT",

@@ -6,3 +6,4 @@ export * from './tree-props';
 export * from './vdom-model';
 export * from './runDomAction';
 export * from './namespace';
+export * from './printTree';
