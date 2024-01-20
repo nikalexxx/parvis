@@ -1,4 +1,4 @@
-import { Component, H, debug } from "parvis";
+import { Component, H, debug, printTree } from "parvis";
 import { Counter } from "./Counter";
 import { TreeItem } from "./TreeItem";
 
@@ -107,8 +107,21 @@ export const App = Component("App", ({ hooks, state }) => {
         >
           ref
         </button>
-        <button on:click={focusRef} >focus ref</button>
+        <button on:click={focusRef}>focus ref</button>
       </RedBox>
     </main>
   );
 });
+
+console.log(
+  printTree(
+    <article>
+      <div>
+        <button on:click={() => (x) => x + 1}>+ start</button>
+        <br />
+        <button on:click={() => (x) => x - 1}>- start</button>
+      </div>
+      <Counter start={1} />
+    </article>
+  )
+);

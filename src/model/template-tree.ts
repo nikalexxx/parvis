@@ -6,7 +6,7 @@ import type {
   MakeComponent,
 } from '../component';
 import { DOMNamespace } from './namespace';
-import { Primitive, isPrimitive } from '../utils';
+import { Primitive, isObject, isPrimitive } from '../utils';
 import { TreeProps } from './tree-props';
 
 /**
@@ -54,6 +54,20 @@ export type ComponentFunction<P extends ComponentProps = {}> = ((
 ) => TemplateTreeComponent<P>) & {
   C: TreeBuilder<TemplateTreeComponent<P>>;
 };
+
+export function isTemplateTreeNode(obj: unknown): obj is TemplateTreeNode {
+  if (isPrimitive(obj)) return true;
+
+  if (typeof obj === 'function' && 'C' in obj && typeof obj.C === 'function') return true;
+
+  if (!isObject(obj)) return false;
+
+  if ('name' in obj && 'props' in obj && 'children' in obj && isObject(obj.props) && Array.isArray(obj.children)) {
+    return true;
+  }
+
+  return false;
+}
 
 export function isElementTemplate(
   template: TemplateTree
