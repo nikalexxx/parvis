@@ -1,12 +1,11 @@
 import { prepareTempateTree } from '../model';
-import { emptySymbol } from '../utils';
+import { get_children, empt, obj_keys } from '../utils';
 import { runEffects } from './effects';
 import {
   ComponentDiff,
   ComponentEffect,
   ComponentInternalProps,
   ComponentProps,
-  VDOMComponent,
 } from './model';
 
 export function getNewProps<P extends ComponentProps>(
@@ -20,13 +19,11 @@ export function getNewProps<P extends ComponentProps>(
     props: checkProps,
   } = componentDiff;
   const { children: newChildren, props: newPropsValue } = template;
-  const isEmptyChildren = checkChildren === emptySymbol;
-  const isEmptyProps = checkProps === emptySymbol;
   let newProps: ComponentInternalProps<P> = { ...props };
-  if (isEmptyChildren) {
+  if (empt(checkChildren)) {
     // поменялись только свойства
-    newProps = { ...(newPropsValue as any), children: props.children };
-  } else if (isEmptyProps) {
+    newProps = { ...(newPropsValue as any), children: get_children(props) };
+  } else if (empt(checkProps)) {
     // поменялись только дети
     newProps.children = prepareTempateTree(newChildren);
   } else {
@@ -41,17 +38,14 @@ export function getNewProps<P extends ComponentProps>(
 export function runPropsEffects(
   oldProps: ComponentProps,
   newProps: ComponentProps,
-  getPropsEffects: (name: string) => ComponentEffect[] | null
+  getPropsEffects: (name: string) => ComponentEffect[]
 ) {
   const propNameList = Array.from(
-    new Set([...Object.keys(oldProps), ...Object.keys(newProps)])
+    new Set([...obj_keys(oldProps), ...obj_keys(newProps)])
   );
   for (const propName of propNameList) {
     const oldValue = oldProps[propName];
     const newValue = newProps[propName];
-    if (oldValue !== newValue) {
-      const effectList = getPropsEffects(propName);
-      if (effectList) runEffects(effectList);
-    }
+    if (oldValue !== newValue) runEffects(getPropsEffects(propName));
   }
 }

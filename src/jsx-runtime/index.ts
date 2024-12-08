@@ -6,6 +6,7 @@ import {
   TemplateTreeNode,
 } from '../model';
 import '../global';
+import { isArray } from '../utils';
 
 declare global {
   namespace JSX {
@@ -26,7 +27,7 @@ export function jsx(
   props: Record<string, any> = {}
 ): TemplateTreeNode {
   const { children } = props;
-  const childList = children ? (Array.isArray(children) ? children : [children]) : [];
+  const childList = children ? (isArray(children) ? children : [children]) : [];
   delete props.children;
   if (typeof tag === 'string') {
     return {

@@ -8,7 +8,7 @@ export function findParentComponent(node: Node): ComponentBindedDOMData | null {
     if (element?.component) {
       return {
         component: element.component,
-        element: element,
+        element,
         domElement: currentNode,
       };
     }

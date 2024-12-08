@@ -7,7 +7,7 @@ import {
   prepareTempateTree,
   VDOMLightNode,
 } from '../model';
-import { isPrimitive } from '../utils';
+import { console_log, isArray, isPrimitive } from '../utils';
 import { createVdomLightComponent } from './component';
 import { createLightElement } from './element';
 
@@ -16,9 +16,9 @@ export function createLightNode(rawNode: TemplateTreeNode): VDOMLightNode {
   let node = rawNode;
   if (isBuildFunction(rawNode)) node = rawNode();
 
-  // console.log('light', {node, rawNode, isBuild: node !== rawNode});
+  // console_log('light', {node, rawNode, isBuild: node !== rawNode});
 
-  if (Array.isArray(node.name))
+  if (isArray(node.name))
     return createLightElement(node as TemplateTreeElement);
   return createVdomLightComponent(node as TemplateTreeComponent);
 }

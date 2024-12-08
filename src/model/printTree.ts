@@ -1,5 +1,11 @@
 import { CommonProps } from 'dot-tree-syntax';
-import { Primitive, isPrimitive } from '../utils';
+import {
+  Primitive,
+  isArray,
+  isFunction,
+  isPrimitive,
+  obj_keys,
+} from '../utils';
 import {
   TemplateTree,
   isComponentTemplate,
@@ -13,10 +19,10 @@ function printPrimitive(value: Primitive): string {
 }
 
 function printValue(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(printValue).join(', ')}]`;
+  if (isArray(value)) return `[${value.map(printValue).join(', ')}]`;
   if (isPrimitive(value)) return printPrimitive(value);
 
-  if (typeof value === 'function') {
+  if (isFunction(value)) {
     let fnLine = value.toString().replace(/\/\* @__PURE__ \*\//g, '');
 
     if (fnLine.includes('jsx')) {
@@ -40,53 +46,36 @@ function printJSX(
   children: string,
   padding = ''
 ): string {
-  let propsLine = Object.keys(props)
+  let propsLine = obj_keys(props)
     .map((key) => `${key}={${printValue(props[key])}}`)
     .join(' ');
 
   if (propsLine.length > 1) propsLine = ' ' + propsLine;
-
-  if (children.length === 0) {
-    return `<${name}${propsLine} />`;
-  }
-
-  return `<${name}${propsLine}>\n${children}\n${padding}</${name}>`;
+  return children.length > 0
+    ? `<${name}${propsLine}>\n${children}\n${padding}</${name}>`
+    : `<${name}${propsLine} />`;
 }
 
+let getPadding = (level: number) => ' │ '.repeat(level);
 export function printTree(tree: TemplateTree, level = 0): string {
-  const padding = ' │ '.repeat(level);
-  const childPadding = ' │ '.repeat(level + 1);
-  if (Array.isArray(tree))
-    return `<>\n${tree
+  const padding = getPadding(level);
+  const childPadding = getPadding(level + 1);
+  let print_list = (children: TemplateTree[]) =>
+    children
       .map((node) => childPadding + printTree(node, level + 1))
-      .join(`\n`)}\n</>`;
+      .join('\n');
+
+  if (isArray(tree)) return `<>\n${print_list(tree)}\n</>`;
   if (isPrimitive(tree)) return `${tree}`;
+  if (isFunction(tree)) return tree.toString();
 
-  if (isElementTemplate(tree)) {
-    const { name, props, children } = tree;
-
-    return printJSX(
-      name[1],
-      props,
-      children
-        .map((node) => childPadding + printTree(node, level + 1))
-        .join('\n'),
-      padding
-    );
-  }
-
-  if (isComponentTemplate(tree)) {
-    const { name, props, children } = tree;
-
-    return printJSX(
-      name.displayName,
-      props,
-      children
-        .map((node) => childPadding + printTree(node, level + 1))
-        .join('\n'),
-      padding
-    );
-  }
-
-  return `--unknown node--`;
+  const { props, children } = tree;
+  const name = isElementTemplate(tree)
+    ? tree.name[1]
+    : isComponentTemplate(tree)
+    ? tree.name.displayName
+    : null;
+  return name
+    ? printJSX(name, props, print_list(children), padding)
+    : `--unknown node--`;
 }

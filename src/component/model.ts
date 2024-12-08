@@ -8,10 +8,10 @@ import {
   VDOMLightComponent,
   TemplateTreeComponent,
 } from '../model';
-import { emptySymbol } from '../utils/diff';
-import { Primitive } from '../utils/type-helpers';
+import { EmptySymbol } from '../utils/diff';
+import { isObject, Primitive } from '../utils/type-helpers';
 import { componentSymbol } from './symbols';
-import { StateClass, StateCreator } from './state';
+import { StateCreator } from './state';
 
 /** общий вид внутреннего состояния компонента */
 export type ComponentState =
@@ -29,13 +29,13 @@ export type ComponentState =
 /** общий вид внешних свойств компонента */
 export type ComponentProps = Record<string, any>;
 
-export type ComponentAdditioanlProps = {
+export type ComponentAdditionalProps = {
   _debug?: boolean;
 };
 
 export type ComponentDiff = {
-  props: VDOMLightComponent['props'] | typeof emptySymbol;
-  children: VDOMLightComponent['children'] | typeof emptySymbol;
+  props: VDOMLightComponent['props'] | EmptySymbol;
+  children: VDOMLightComponent['children'] | EmptySymbol;
   template: VDOMLightComponent['template'];
 };
 
@@ -61,8 +61,6 @@ export type VDOMComponent<P extends ComponentProps = ComponentProps> =
   VDOMRefDom & {
     render: () => TemplateTreeElement; // получение лёгкой разметки
     name: string; // отображаемое имя компонента
-    nameSymbol: symbol; // уникальный символ компонента
-    instance: string; // ключ инстанса
     applyDiff(diff: ComponentDiff): void; // применение diff к существующему компоненту
     props: P; // свойства
     effects: ComponentEffects;
@@ -73,17 +71,17 @@ export type VDOMComponent<P extends ComponentProps = ComponentProps> =
   };
 
 export function isComponent(e: unknown): e is VDOMComponent {
-  return typeof e === 'object' && e !== null && componentSymbol in e;
+  return isObject(e) && componentSymbol in e;
 }
 
 export type ComponentInternalProps<P extends ComponentProps> = P & {
   children: TemplateTreeNode[];
 } & TreeProps &
-  ComponentAdditioanlProps;
+  ComponentAdditionalProps;
 
 export type ComponentInternalPropsGetters<P extends ComponentProps> = {
   [K in keyof ComponentInternalProps<P>]: () => ComponentInternalProps<P>[K];
-}
+};
 
 export type ComponentParams<P extends ComponentProps> = {
   props: (() => ComponentInternalProps<P>) & ComponentInternalPropsGetters<P>;

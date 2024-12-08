@@ -1,6 +1,10 @@
 import { Component } from "parvis";
 
-export const Counter = Component<{ start: number }>(
+interface Props {
+  start: number;
+}
+
+export const Counter = Component<Props>(
   "Counter",
   ({ props, state, hooks }) => {
     const [getCount, setCount] = state(0);
@@ -28,7 +32,7 @@ export const Counter = Component<{ start: number }>(
     hooks.effect(() => {
       console.log("props changed");
       console.log("start = ", props.start());
-    }, [props.start])
+    }, [props.start]);
 
     return ({ start }) => {
       const count = getCount();

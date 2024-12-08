@@ -1,5 +1,5 @@
 import type { VDOMLightProps, VDOMElement } from '../model';
-import { deleteSymbol, emptySymbol } from '../utils';
+import { del, empt, isFunction } from '../utils';
 import { getEventName, isListener } from './eventListener';
 
 type GroupedLightProps = Pick<
@@ -22,14 +22,10 @@ export function groupLightProps(props: VDOMLightProps): GroupedLightProps {
       ] = value;
     } else if (isListener(propName, value)) {
       const eventName = getEventName(propName);
-      if (
-        typeof value !== 'function' &&
-        value !== deleteSymbol &&
-        value !== emptySymbol
-      ) {
+      if (!isFunction(value) && !del(value) && !empt(value)) {
         console.error(new Error(`${eventName} listener is unknown`), value);
       }
-      grouped.eventListeners[eventName] = {handleEvent: value};
+      grouped.eventListeners[eventName] = { handleEvent: value };
     } else {
       grouped.attributes[propName] = value;
     }

@@ -1,4 +1,11 @@
 import type { VDOMLightElement, TemplateTreeElement } from '../model';
+import {
+  obj_keys,
+  obj_assign,
+  obj_fromEntries,
+  obj_entries,
+  isArray,
+} from '../utils';
 import { prepareChildren } from './light';
 
 const listenerCache: Map<string, string> = new Map();
@@ -28,15 +35,15 @@ export function createLightElement(
     tagName,
   };
 
-  if (Object.keys(props).length > 0) {
+  if (obj_keys(props).length > 0) {
     const { _attributes = {}, ...other } = props;
-    const rawProps = Object.assign(other, _attributes);
+    const rawProps = obj_assign(other, _attributes);
 
     // FIXME: здесь нужно отличать шаблонные списки от остальных, либо передавать знание в билдер
-    element.props = Object.fromEntries(
-      Object.entries(rawProps).map(([name, value]) => [
+    element.props = obj_fromEntries(
+      obj_entries(rawProps).map(([name, value]) => [
         getBasicName(name),
-        Array.isArray(value) ? value.join('') : value,
+        isArray(value) ? value.join('') : value,
       ])
     );
   }

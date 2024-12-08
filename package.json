@@ -1,6 +1,6 @@
 {
   "name": "parvis",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Light library for user interface",
   "main": "./dist/index.cjs.js",
   "module": "./dist/index.js",
@@ -17,17 +17,17 @@
   ],
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "require": "./dist/index.cjs.js",
-      "default": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/index.js"
     },
     "./jsx-runtime": {
-      "default": "./dist/index.js",
-      "types": "./dist/jsx-runtime/index.d.ts"
+      "types": "./dist/jsx-runtime/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./jsx-dev-runtime": {
-      "default": "./dist/index.js",
-      "types": "./dist/jsx-runtime/index.d.ts"
+      "types": "./dist/jsx-runtime/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "scripts": {
@@ -37,12 +37,11 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^5.1.6",
-    "vite": "^4.2.1",
-    "vite-plugin-dts": "^2.3.0"
-  },
-  "dependencies": {
     "dot-tree-syntax": "^1.0.0",
-    "html-tag-types": "^0.0.1"
+    "html-tag-types": "^0.0.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vite-plugin-dts": "^4.3.0",
+    "vitest": "^2.1.8"
   }
 }

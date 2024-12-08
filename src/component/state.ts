@@ -1,4 +1,4 @@
-import { GetPrimitiveFromLiteral } from '../utils';
+import { GetPrimitiveFromLiteral, isFunction } from '../utils';
 import { runEffects } from './effects';
 import { ComponentState } from './model';
 
@@ -7,7 +7,7 @@ export type StateUpdater<S> = S | ((prev: S) => S);
 export const getNewState = <S extends ComponentState>(
   state: S,
   arg: StateUpdater<S>
-): S => (typeof arg === 'function' ? arg(state) : arg);
+): S => (isFunction(arg) ? arg(state) : arg);
 
 export type StateClass<S> = [() => S, (newState: StateUpdater<S>) => void];
 

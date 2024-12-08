@@ -14,10 +14,6 @@ export default defineConfig({
       fileName: (format, name) => `${name}${format === 'es' ? '' : '.cjs'}.js`,
       formats: ['es', 'cjs'],
     },
-    rollupOptions: {
-      external: ['dot-tree-syntax', 'html-tag-types'],
-    },
-    minify: true,
     outDir: 'dist',
   },
   plugins: [dts()],
