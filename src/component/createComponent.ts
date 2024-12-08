@@ -9,7 +9,7 @@ import {
   VDOMComponent,
 } from './model';
 import { StateClass, getStateClass } from './state';
-import { emptySymbol, printDiff } from '../utils/diff';
+import { empt, printDiff } from '../utils/diff';
 import { componentSymbol } from './symbols';
 import { patchDOM } from './patchDOM';
 import {
@@ -26,6 +26,7 @@ import { DEBUG_MODE } from './debug';
 import { printComponentTree } from './printComponentTree';
 import { runEffects } from './effects';
 import { getNewProps, runPropsEffects } from './applyDiff';
+import { console_log, get_props, obj_assign } from '../utils';
 
 export type CreateComponentParams<P extends ComponentProps> = {
   light: VDOMLightComponent<P>;
@@ -41,9 +42,6 @@ export const createComponent = <P extends ComponentProps>({
   } = light;
 
   let component: VDOMComponent = {} as any;
-
-  // уникальный идентификатор для созданного компонента
-  const componentNameSymbol = Symbol(componentName);
 
   // свойства компонента
   let props: ComponentInternalProps<P> = {
@@ -70,7 +68,7 @@ export const createComponent = <P extends ComponentProps>({
 
   const effectMap: Map<any, ComponentEffect[]> = new Map();
 
-  const runHook = (name: 'mount' | 'destroy', max = Infinity) => {
+  let runHook = (name: 'mount' | 'destroy', max = Infinity) => {
     return () => {
       if (handlers[name].count > max) {
         console.error(`${name} hook executed already`);
@@ -129,7 +127,7 @@ export const createComponent = <P extends ComponentProps>({
     }
   );
 
-  const rawRender = makeComponent({
+  let rawRender = makeComponent({
     props: internalProps,
     state: stateClass,
     hooks: {
@@ -144,9 +142,9 @@ export const createComponent = <P extends ComponentProps>({
     },
   });
 
-  const render = () => {
+  let render = () => {
     const element = addElementParent(rawRender(props));
-    element.props['data-component'] = componentName;
+    get_props(element)['data-component'] = componentName;
     return element;
   };
 
@@ -161,16 +159,15 @@ export const createComponent = <P extends ComponentProps>({
 
     if (DEBUG_MODE.enabled && props._debug) {
       console.groupCollapsed('old state: ' + componentName);
-
-      console.log(printComponentTree(component));
-      console.log(stateList.map((v) => v[0]()));
+      console_log(printComponentTree(component));
+      console_log(stateList.map((v) => v[0]()));
       console.groupEnd();
       console.groupCollapsed('diff: ' + componentName);
-      console.log({ template, light, lightVdom, lightDiff });
+      console_log({ template, light, lightVdom, lightDiff });
       printDiff(lightDiff);
       console.groupEnd();
     }
-    if (lightDiff === emptySymbol) return;
+    if (empt(lightDiff)) return;
 
     // обновляем, если были изменения
     lightVdom = light;
@@ -179,36 +176,28 @@ export const createComponent = <P extends ComponentProps>({
 
     if (DEBUG_MODE.enabled && props._debug) {
       console.groupCollapsed('new state: ' + componentName);
-
-      console.log(printComponentTree(component));
-      console.log(stateList.map((v) => v[0]()));
+      console_log(printComponentTree(component));
+      console_log(stateList.map((v) => v[0]()));
       console.groupEnd();
     }
   }
 
-  const applyDiff: VDOMComponent['applyDiff'] = (componentDiff) => {
-    // достаточно raw объекта light, так как потом компонент сам вычислит diff
-    const newProps: ComponentInternalProps<P> = getNewProps(
-      componentDiff,
-      props
-    );
-
+  let applyDiff: VDOMComponent['applyDiff'] = (componentDiff) => {
     const oldProps = props;
-    props = newProps;
+    // достаточно raw объекта light, так как потом компонент сам вычислит diff
+    props = getNewProps(componentDiff, props);
 
     rerender();
 
     runPropsEffects(oldProps, props, (name) => {
       const propUpdateGetter = propsUpdateMap.get(name);
-      return propUpdateGetter ? effectMap.get(propUpdateGetter) ?? null : null;
+      return propUpdateGetter ? effectMap.get(propUpdateGetter) ?? [] : [];
     });
   };
 
-  Object.assign(component, {
+  obj_assign(component, {
     render,
     name: componentName,
-    nameSymbol: componentNameSymbol,
-    instance: '0',
     [componentSymbol]: true,
     dom: domData,
     props,

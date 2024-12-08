@@ -1,12 +1,20 @@
 import { CommonProps, CreateTarget, TreeBuilder } from 'dot-tree-syntax';
 
 import type {
-  ComponentAdditioanlProps,
+  ComponentAdditionalProps,
   ComponentProps,
   MakeComponent,
 } from '../component';
 import { DOMNamespace } from './namespace';
-import { Primitive, isObject, isPrimitive } from '../utils';
+import {
+  Primitive,
+  get_children,
+  get_props,
+  isArray,
+  isFunction,
+  isObject,
+  isPrimitive,
+} from '../utils';
 import { TreeProps } from './tree-props';
 
 /**
@@ -41,7 +49,7 @@ export type TemplateTreeElement = CreateTarget<
 export type TemplateTreeComponent<P extends ComponentProps = any> =
   CreateTarget<
     MakeComponent<P> & { displayName: string },
-    P & TreeProps & ComponentAdditioanlProps,
+    P & TreeProps & ComponentAdditionalProps,
     TemplateTreeNodeChildSettings
   >;
 
@@ -49,7 +57,7 @@ export type TemplateTreeComponent<P extends ComponentProps = any> =
  * функция сборки компонента, в первую очередь для jsx
  */
 export type ComponentFunction<P extends ComponentProps = {}> = ((
-  props: P & TreeProps & ComponentAdditioanlProps,
+  props: P & TreeProps & ComponentAdditionalProps,
   children: TemplateTree
 ) => TemplateTreeComponent<P>) & {
   C: TreeBuilder<TemplateTreeComponent<P>>;
@@ -58,34 +66,30 @@ export type ComponentFunction<P extends ComponentProps = {}> = ((
 export function isTemplateTreeNode(obj: unknown): obj is TemplateTreeNode {
   if (isPrimitive(obj)) return true;
 
-  if (typeof obj === 'function' && 'C' in obj && typeof obj.C === 'function') return true;
+  if (isFunction(obj) && 'C' in obj && isFunction(obj.C)) return true;
 
   if (!isObject(obj)) return false;
 
-  if ('name' in obj && 'props' in obj && 'children' in obj && isObject(obj.props) && Array.isArray(obj.children)) {
-    return true;
-  }
-
-  return false;
+  return (
+    'name' in obj &&
+    'props' in obj &&
+    'children' in obj &&
+    isObject(get_props(obj)) &&
+    isArray(get_children(obj))
+  );
 }
 
 export function isElementTemplate(
   template: TemplateTree
 ): template is TemplateTreeElement {
-  return (
-    !isPrimitive(template) &&
-    !Array.isArray(template) &&
-    Array.isArray(template.name)
-  );
+  return !isPrimitive(template) && !isArray(template) && isArray(template.name);
 }
 
 export function isComponentTemplate(
   template: TemplateTree
 ): template is TemplateTreeComponent {
   return (
-    !isPrimitive(template) &&
-    !Array.isArray(template) &&
-    typeof template.name === 'function'
+    !isPrimitive(template) && !isArray(template) && isFunction(template.name)
   );
 }
 

@@ -3,9 +3,11 @@ import {
   Diff,
   diffArray,
   DiffByKeys,
-  emptySymbol,
+  emptyS,
   raw,
   isPrimitive,
+  get_children,
+  empt,
 } from '../utils';
 import {
   VDOMLightComponent,
@@ -25,7 +27,7 @@ export function diffVdomLight(
   if (B.props?._forceUpdate) return raw(B);
 
   // явное запрещение обновления
-  if (B.props?._skipUpdate) return emptySymbol;
+  if (B.props?._skipUpdate) return emptyS;
 
   if ('get' in B) {
     // компонент заменил дерево
@@ -37,29 +39,27 @@ export function diffVdomLight(
     // сравниваем одинаковые компоненты
     const diffProps = diff(A.props, B.props);
     const diffChildren = diffArray(
-      A.children ?? [],
-      B.children ?? [],
+      get_children(A) ?? [],
+      get_children(B) ?? [],
       diffVdomLight
     );
 
-    const isEmptyDiffProps = diffProps === emptySymbol;
-    const isEmptyDiffChildren = diffChildren === emptySymbol;
+    const isEmptyDiffProps = empt(diffProps);
+    const isEmptyDiffChildren = empt(diffChildren);
 
     // пропускаем, если ничего не изменилось
-    if (isEmptyDiffChildren && isEmptyDiffProps) return emptySymbol;
+    if (isEmptyDiffChildren && isEmptyDiffProps) return emptyS;
 
     // если изменения были, выбираем новые значения, так как они нам нужны в компоненте, а не diff
     const componentDiff: Diff<VDOMLightComponent, VDOMLightComponent> = {
       ...B,
     } as Diff<VDOMLightComponent, VDOMLightComponent>;
-    (componentDiff as any).props = isEmptyDiffProps
-      ? emptySymbol
-      : raw(B.props);
+    (componentDiff as any).props = isEmptyDiffProps ? emptyS : raw(B.props);
     (componentDiff as any).children = isEmptyDiffChildren
-      ? emptySymbol
-      : raw(B.children ?? []);
-    (componentDiff as any).get = emptySymbol;
-    (componentDiff as any).name = emptySymbol;
+      ? emptyS
+      : raw(get_children(B) ?? []);
+    (componentDiff as any).get = emptyS;
+    (componentDiff as any).name = emptyS;
 
     // для сравнения внутри компонента
     (componentDiff as any).template = raw(B.template);
@@ -76,19 +76,18 @@ export function diffVdomLight(
 
   const diffElementProps = diff(A.props ?? {}, B.props ?? {});
   const diffElementChildren = diffArray(
-    A.children ?? [],
-    B.children ?? [],
+    get_children(A) ?? [],
+    get_children(B) ?? [],
     diffVdomLight
   );
 
-  if (diffElementProps === emptySymbol && diffElementChildren === emptySymbol)
-    return emptySymbol;
+  if (empt(diffElementProps) && empt(diffElementChildren)) return emptyS;
 
   const fDiff: DiffByKeys<VDOMLightElement, VDOMLightElement> = {
     props: diffElementProps,
     children: diffElementChildren,
-    tagName: emptySymbol,
-    namespace: emptySymbol,
+    tagName: emptyS,
+    namespace: emptyS,
   };
 
   return fDiff;

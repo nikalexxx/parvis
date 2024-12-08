@@ -1,6 +1,5 @@
 import { isComponent, runDestroy, runEffects } from './component';
 import { createLightNode } from './light/light';
-// import { log } from './utils/log';
 import { getContentFromLight } from './materialize/materializeVDOMLight';
 import { TemplateTreeNode } from './model/template-tree';
 import { Content, isVDOMElement } from './model/vdom-model';
@@ -9,6 +8,7 @@ import { elementSymbol } from './symbols';
 import { isPrimitive, Primitive } from './utils/type-helpers';
 import { createLightElement } from './light/element';
 import { getElementFromLight } from './materialize/materializeElement';
+import { console_log, obj_keys } from './utils';
 
 export type RenderEffect = (...args: any[]) => void;
 
@@ -38,7 +38,7 @@ export function render(
   const dom = DOM(content, effects);
   targetElement.appendChild(dom);
 
-  // console.log('render', { effects });
+  // console_log('render', { effects });
 
   // запуск эффектов (в основном монтирования)
   runEffects(effects);
@@ -58,14 +58,14 @@ export function DOM(
   effects?: RenderEffect[]
 ): Element | Text {
   // console.group('dom');
-  // console.log({ template });
+  // console_log({ template });
   // подготовка
   const light = createLightNode(template);
-  // console.log({ light });
+  // console_log({ light });
 
   // материализация, начинают работать компоненты
   const vdom = getContentFromLight(light);
-  // console.log({ vdom });
+  // console_log({ vdom });
   // console.groupEnd();
 
   return DOMFromVdom(vdom, effects);
@@ -121,7 +121,7 @@ export function DOMFromVdom(
   domElement[elementSymbol] = vdom;
 
   // аттрибуты
-  for (const prop of Object.keys(attributes)) {
+  for (const prop of obj_keys(attributes)) {
     // пропуск всех технических атрибутов
     if (prop.startsWith('_')) continue;
     const value = attributes[prop];
@@ -136,7 +136,7 @@ export function DOMFromVdom(
   }
 
   // обработка событий
-  for (const eventName of Object.keys(eventListeners)) {
+  for (const eventName of obj_keys(eventListeners)) {
     domElement.addEventListener(eventName, eventListeners[eventName], false);
   }
 

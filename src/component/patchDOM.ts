@@ -1,16 +1,20 @@
 import { DOMFromVdom, isElement, RenderEffect } from '../dom';
 import { elementSymbol } from '../symbols';
 import {
-  arraySymbol,
-  deleteSymbol,
+  arrayS,
   Diff,
-  diff,
   DiffByKeys,
-  emptySymbol,
+  del,
   isDiffRaw,
-  rawSymbol,
+  empt,
+  rawS,
 } from '../utils/diff';
-import { isObject, isPrimitive, setType } from '../utils/type-helpers';
+import {
+  isFunction,
+  isObject,
+  isPrimitive,
+  setType,
+} from '../utils/type-helpers';
 import { getContentFromLight } from '../materialize/materializeVDOMLight';
 import { groupLightProps, setAttribute } from '../element';
 import { runDestroy } from './runDestroy';
@@ -25,20 +29,21 @@ import {
   isVDOMElement,
 } from '../model';
 import { runEffects } from './effects';
+import { console_log, get_children, obj_keys } from '../utils';
 
 /** Точечное изменение dom по diff */
 export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
   const parent = dom.parentNode;
   if (!parent) return;
 
-  // console.log('patchDom', { dom, diffObject });
+  // console_log('patchDom', { dom, diffObject });
 
-  if (diffObject === emptySymbol) return;
+  if (empt(diffObject)) return;
 
-  if (diffObject === deleteSymbol) {
+  if (del(diffObject)) {
     // слабые ссылки могли бы помочь
 
-    // console.log('patchDOM/delete', { diffObject, dom });
+    // console_log('patchDOM/delete', { diffObject, dom });
 
     // запуск хуков
     runDestroy(dom);
@@ -70,7 +75,7 @@ export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
     return;
   }
 
-  if (rawSymbol in diffObject) {
+  if (rawS in diffObject) {
     const light = diffObject as VDOMLightNode;
 
     const content = getContentFromLight(light);
@@ -93,7 +98,7 @@ export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
     return;
   }
 
-  if (arraySymbol in diffObject) return;
+  if (arrayS in diffObject) return;
 
   // далее честный diff
 
@@ -118,19 +123,19 @@ export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
     props as VDOMLightProps
   );
 
-  // console.log('patchDom/element', { attributes, eventListeners });
+  // console_log('patchDom/element', { attributes, eventListeners });
 
-  if (Object.keys(attributes).length > 0) {
+  if (obj_keys(attributes).length > 0) {
     patchAttributes({ dom, diffAttributes: attributes });
   }
 
-  if (Object.keys(eventListeners).length > 0) {
+  if (obj_keys(eventListeners).length > 0) {
     patchEventListeners({ dom, diffEventListeners: eventListeners });
   }
 
   patchChildNodes({
     dom,
-    diffChildren: diffObject.children as Diff<VDOMLightNode[]>,
+    diffChildren: get_children(diffObject) as Diff<VDOMLightNode[]>,
   });
   if (dom.tagName === 'TEXTAREA') {
     runDomAction(dom, 'value', dom.innerHTML);
@@ -151,12 +156,12 @@ export function patchAttributes({
   const element = dom[elementSymbol];
 
   for (const name in diffAttributes) {
-    // console.log('patchDom/patchAttributes', {name})
+    // console_log('patchDom/patchAttributes', {name})
     const diffAttribute = diffAttributes[name];
 
-    if (diffAttribute === emptySymbol) continue;
+    if (empt(diffAttribute)) continue;
 
-    if (diffAttribute === deleteSymbol) {
+    if (del(diffAttribute)) {
       if (element) delete element.attributes[name];
       dom.removeAttribute(name);
       runDomAction(dom, name, false);
@@ -182,38 +187,37 @@ export function patchEventListeners({
   dom,
   diffEventListeners,
 }: PatchEventListenersParams): void {
-  // console.log('patchDom/patchEventListeners', { diffEventListeners });
+  // console_log('patchDom/patchEventListeners', { diffEventListeners });
 
   // удаление старых перехватчиков событий
   const oldListeners = dom[elementSymbol]?.eventListeners ?? {};
 
   // обновление перехватчиков событий
-  for (const eventName of Object.keys(diffEventListeners)) {
+  for (const eventName of obj_keys(diffEventListeners)) {
     const oldListener = oldListeners[eventName];
     const listener = diffEventListeners[eventName];
 
-    if (listener === emptySymbol) continue;
+    if (empt(listener)) continue;
 
-    if (listener === deleteSymbol && oldListener) {
+    if (del(listener) && oldListener) {
       dom.removeEventListener(eventName, oldListener);
       delete oldListeners[eventName];
       continue;
     }
 
     let listenerFn: EventListener;
-    if (typeof listener === 'function') listenerFn = listener;
+    if (isFunction(listener)) listenerFn = listener;
     else if (isObject(listener) && 'handleEvent' in listener) {
       if (isDiffRaw(listener.handleEvent)) {
         listenerFn = listener.handleEvent as any;
-      } else {
-        if (listener.handleEvent === emptySymbol) continue;
-        if (listener.handleEvent === deleteSymbol && oldListener) {
-          dom.removeEventListener(eventName, oldListener);
-          delete oldListeners[eventName];
-          continue;
-        }
+      } else if (empt(listener.handleEvent)) {
+        continue;
+      } else if (del(listener.handleEvent) && oldListener) {
+        dom.removeEventListener(eventName, oldListener);
+        delete oldListeners[eventName];
         continue;
       }
+      continue;
     } else continue;
 
     if (oldListener) {
@@ -230,14 +234,14 @@ type PatchChildNodesParams = {
 };
 
 export function patchChildNodes({ dom, diffChildren }: PatchChildNodesParams) {
-  if (diffChildren === emptySymbol) return;
-  if (diffChildren === deleteSymbol) {
+  if (empt(diffChildren)) return;
+  if (del(diffChildren)) {
     dom.innerHTML = '';
     return;
   }
 
-  if (typeof diffChildren !== 'object') return;
-  if (!(arraySymbol in diffChildren)) return;
+  if (!isObject(diffChildren)) return;
+  if (!(arrayS in diffChildren)) return;
   // обновление существующих потомков
 
   const element = dom[elementSymbol];
@@ -249,18 +253,18 @@ export function patchChildNodes({ dom, diffChildren }: PatchChildNodesParams) {
   // ключи, которые были обновлены
   const updatedChildKeys = new Set<string>();
 
-  // console.log({childOrder, oldNodes});
+  // console_log({childOrder, oldNodes});
 
   const deletionList: Node[] = [];
   for (let i = 0; i < oldNodes.length; i++) {
     const oldChild = oldNodes[i];
     const key = childOrder[i]; // TODO: поддержать логику с key
     const strI = `${i}`;
-    // console.log('patchDom/patchChildNodes/index', {strI})
+    // console_log('patchDom/patchChildNodes/index', {strI})
 
     if (strI in diffChildren) {
       const childDiff = diffChildren[strI as any];
-      if (childDiff === deleteSymbol) {
+      if (del(childDiff)) {
         // собираем узлы на удаление, чтобы не нарушать порядок
         deletionList.push(oldChild);
       } else {
@@ -286,13 +290,13 @@ export function patchChildNodes({ dom, diffChildren }: PatchChildNodesParams) {
     const child = diffChildren[keyI];
 
     // пропуск пустого изменения
-    if (child === emptySymbol) continue;
+    if (empt(child)) continue;
 
     // пропуск удаления, ведь все удаления, что могли быть, уже отработали в первом цикле
-    if (child === deleteSymbol) continue;
+    if (del(child)) continue;
 
     // пропуск вложенных diff, все они должны отработать ранее
-    if (!isPrimitive(child) && !(rawSymbol in child)) continue;
+    if (!isPrimitive(child) && !(rawS in child)) continue;
 
     const content = getContentFromLight(child as any);
 

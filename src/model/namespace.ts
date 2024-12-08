@@ -1,15 +1,12 @@
 export type DOMNamespace = 'xhtml' | 'svg' | 'mathml';
 
-export const namespaceCodes = {
-  'http://www.w3.org/1999/xhtml': 'xhtml',
-  'http://www.w3.org/2000/svg': 'svg',
-  'http://www.w3.org/1998/Math/MathML': 'mathml',
-} as const;
+const NAMESPACE = 'http://www.w3.org/';
+const XHTML_NAME = NAMESPACE + '1999/xhtml';
+const SVG_NAME = NAMESPACE + '2000/svg';
+const MATHML_NAME = NAMESPACE + '1998/Math/MathML';
 
 export const namespaceNames = {
-  xhtml: 'http://www.w3.org/1999/xhtml',
-  svg: 'http://www.w3.org/2000/svg',
-  mathml: 'http://www.w3.org/1998/Math/MathML',
-}  as const;
-
-export type DOMNamespaceName = keyof typeof namespaceCodes;
+  xhtml: XHTML_NAME,
+  svg: SVG_NAME,
+  mathml: MATHML_NAME,
+} as const;

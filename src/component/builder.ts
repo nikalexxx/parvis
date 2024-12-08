@@ -20,15 +20,12 @@ export type ComponentBuildRoot = <P extends ComponentProps = {}>(
  */
 export const Component: ComponentBuildRoot = (name, make) => {
   (make as any).displayName = name; // имя в основном для отладки
-  const builder = createTreeBuilder(make);
-
   const getComponent: ComponentFunction = (props, children) => ({
     name: make as any,
     props,
     children: children as any,
   });
-
-  getComponent.C = builder as any;
+  getComponent.C = createTreeBuilder(make) as any;
 
   return getComponent as any;
 };

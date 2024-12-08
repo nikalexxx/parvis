@@ -1,6 +1,6 @@
-export * from './global';
+export type * from './global';
 export * from './model';
-export * from './utils';
+export type * from './utils';
 export * from './dom';
 export * from './element';
 export * from './component';

@@ -7,7 +7,7 @@ import {
   DOMNamespace,
 } from '../model';
 import { elementSymbol, vdomNodeSymbol } from '../symbols';
-import { assign } from '../utils';
+import { assign, get_children } from '../utils';
 import { groupLightProps } from './lightPropsGroups';
 
 /**
@@ -25,7 +25,6 @@ function getEmptyVDOMElement(
     childOrder: [],
     eventListeners: {},
     utilityProps: {},
-    subComponents: {},
     dom: {},
     nodeType: Node.ELEMENT_NODE,
     [elementSymbol]: true,
@@ -44,12 +43,12 @@ export const createElement = (
   const element = getEmptyVDOMElement(namespace, tagName);
 
   // разделение на атрибуты и слушатели
-  const { attributes, eventListeners, utilityProps } = groupLightProps(props);
-  assign(element, 'attributes', attributes);
-  assign(element, 'eventListeners', eventListeners);
-  assign(element, 'utilityProps', utilityProps);
+  const lightProps = groupLightProps(props);
+  assign(element, 'attributes', lightProps.attributes);
+  assign(element, 'eventListeners', lightProps.eventListeners);
+  assign(element, 'utilityProps', lightProps.utilityProps);
 
-  element.children = childrenByKeys.children;
+  element.children = get_children(childrenByKeys);
   element.childOrder = childrenByKeys.order;
 
   return element;

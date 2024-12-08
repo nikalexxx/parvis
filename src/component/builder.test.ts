@@ -1,24 +1,25 @@
 import { H } from '../element/builder';
+import { console_log } from '../utils';
 import { Component } from './builder';
 
 const Test = Component<{ color: string }>('Test', ({ props, state, hooks }) => {
-    const [count, setCount] = state(0);
-    const inc = () => setCount((c) => c + 1);
+  const [count, setCount] = state(0);
+  const inc = () => setCount((c) => c + 1);
 
-    hooks.mount(() => {
-        console.log('test mount!');
-    });
+  hooks.mount(() => {
+    console_log('test mount!');
+  });
 
-    hooks.destroy(() => {
-        console.log('test destroy!');
-    });
+  hooks.destroy(() => {
+    console_log('test destroy!');
+  });
 
-    return () =>
-        H.div.style(`color: ${props().color}`)(
-            H.div(count()),
-            H.div.onClick(inc)('+')
-        );
+  return () =>
+    H.div.style(`color: ${props().color}`)(
+      H.div(count()),
+      H.div.onClick(inc)('+')
+    );
 });
 
-console.log(Test.color('red')());
-console.log(Test.color('green')());
+console_log(Test.C.color('red')());
+console_log(Test.C.color('green')());
