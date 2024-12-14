@@ -15,6 +15,10 @@ export default defineConfig({
       formats: ['es', 'cjs'],
     },
     outDir: 'dist',
+    rollupOptions: {
+      external: ['html-tag-types', 'dot-tree-syntax'],
+    },
+    sourcemap: true,
   },
   plugins: [dts()],
 });

@@ -31,8 +31,12 @@ export const App = Component("App", ({ hooks, state }) => {
   return () => (
     <main class={css.app}>
       {RedBox.C(H.h2(`hello, world`), "test")}
-      <RedBox>
-        <button on:click={() => setVisible((x) => !x)}>
+      <RedBox _debug _debugChildren>
+        <button
+          on:click={() => {
+            setVisible((x) => !x);
+          }}
+        >
           {visible() ? "hide counter" : "show counter"}
         </button>
         {visible() && (

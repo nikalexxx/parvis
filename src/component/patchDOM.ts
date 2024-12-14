@@ -32,7 +32,11 @@ import { runEffects } from './effects';
 import { console_log, get_children, obj_keys } from '../utils';
 
 /** Точечное изменение dom по diff */
-export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
+export function patchDOM(
+  dom: Node,
+  diffObject: DiffVDOMLight,
+  debugChildrenLevel?: number
+) {
   const parent = dom.parentNode;
   if (!parent) return;
 
@@ -108,7 +112,10 @@ export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
     if (!component) return; // ошибка
 
     // компонент сам разбирается с обновлением
-    component.applyDiff(diffObject as any);
+    component.applyDiff(
+      diffObject as any,
+      debugChildrenLevel !== undefined ? debugChildrenLevel + 1 : undefined
+    );
 
     return;
   }
@@ -136,10 +143,10 @@ export function patchDOM(dom: Node, diffObject: DiffVDOMLight) {
   patchChildNodes({
     dom,
     diffChildren: get_children(diffObject) as Diff<VDOMLightNode[]>,
+    debugChildrenLevel,
   });
-  if (dom.tagName === 'TEXTAREA') {
-    runDomAction(dom, 'value', dom.innerHTML);
-  }
+
+  if (dom.tagName === 'TEXTAREA') runDomAction(dom, 'value', dom.innerHTML);
 }
 
 type PatchPropsParams = {
@@ -231,9 +238,14 @@ export function patchEventListeners({
 type PatchChildNodesParams = {
   dom: Element;
   diffChildren: Diff<VDOMLightNode[]>;
+  debugChildrenLevel?: number;
 };
 
-export function patchChildNodes({ dom, diffChildren }: PatchChildNodesParams) {
+export function patchChildNodes({
+  dom,
+  diffChildren,
+  debugChildrenLevel,
+}: PatchChildNodesParams) {
   if (empt(diffChildren)) return;
   if (del(diffChildren)) {
     dom.innerHTML = '';
@@ -268,7 +280,7 @@ export function patchChildNodes({ dom, diffChildren }: PatchChildNodesParams) {
         // собираем узлы на удаление, чтобы не нарушать порядок
         deletionList.push(oldChild);
       } else {
-        patchDOM(oldChild, childDiff as any);
+        patchDOM(oldChild, childDiff as any, debugChildrenLevel);
         updatedChildKeys.add(strI);
       }
     }
