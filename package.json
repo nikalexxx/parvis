@@ -1,6 +1,6 @@
 {
   "name": "parvis",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Light library for user interface",
   "main": "./dist/index.cjs.js",
   "module": "./dist/index.js",
@@ -36,9 +36,11 @@
   },
   "author": "",
   "license": "MIT",
-  "devDependencies": {
+  "dependencies": {
     "dot-tree-syntax": "^1.0.0",
-    "html-tag-types": "^0.0.1",
+    "html-tag-types": "^0.0.1"
+  },
+  "devDependencies": {
     "typescript": "^5.7.2",
     "vite": "^6.0.3",
     "vite-plugin-dts": "^4.3.0",

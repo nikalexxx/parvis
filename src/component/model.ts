@@ -31,6 +31,7 @@ export type ComponentProps = Record<string, any>;
 
 export type ComponentAdditionalProps = {
   _debug?: boolean;
+  _debugChildren?: boolean;
 };
 
 export type ComponentDiff = {
@@ -61,7 +62,7 @@ export type VDOMComponent<P extends ComponentProps = ComponentProps> =
   VDOMRefDom & {
     render: () => TemplateTreeElement; // получение лёгкой разметки
     name: string; // отображаемое имя компонента
-    applyDiff(diff: ComponentDiff): void; // применение diff к существующему компоненту
+    applyDiff(diff: ComponentDiff, debugChildrenLevel?: number): void; // применение diff к существующему компоненту
     props: P; // свойства
     effects: ComponentEffects;
     externalEffects: ExternalComponentEffects;
@@ -112,9 +113,9 @@ export type ComponentGetTemplate<P extends ComponentProps> = (
 /**
  * функция, описывающая поведение компонента
  */
-export type MakeComponent<P extends ComponentProps = {}> = (
-  params: ComponentParams<P>
-) => ComponentGetTemplate<P>;
+export type MakeComponent<P extends ComponentProps = {}> = <IP extends P>(
+  params: ComponentParams<IP>
+) => ComponentGetTemplate<IP>;
 
 export type ComponentBindedDOMData = {
   component: VDOMComponent;

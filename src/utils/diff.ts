@@ -102,6 +102,7 @@ export function diffArray<L1 extends any[], L2 extends any[]>(
     if (i < min) {
       // сравниваем общую часть
       const indexDiff = compare(A[i], B[i]); // сравниваем элементы
+      // console.log({ indexDiff });
       if (!empt(indexDiff)) {
         result[String(i)] = indexDiff; // добавляем только отличия
       }
@@ -140,7 +141,8 @@ export function diffObject<
   return emptyS;
 }
 
-const logNewValue = (s: string) => console_log('%c + ' + s, 'color: blue');
+const logNewValue = (s: string) => console_log('%c ± ' + s, 'color: blue');
+const logNewFn = (s: string) => console_log('%c ± ' + s, 'color: gray');
 const logAdded = (s: string) => console_log('%c + ' + s, 'color: green');
 const logDeleted = (s: string) =>
   console_log('%c - ' + (s || '<delete>'), 'color: red');
@@ -156,23 +158,28 @@ function removeEmpty<A, B>(diff: Diff<A, B>): Diff<A, B> {
   return diff;
 }
 
-export function printDiff<A, B>(rawdiff: Diff<A, B>): void {
+export function printDiff<A, B>(
+  rawdiff: Diff<A, B>,
+  skip: (rawdiff) => boolean = () => true
+): void {
   const cleanDiff = removeEmpty(rawdiff);
   if (empt(cleanDiff)) return;
+  if (skip(cleanDiff)) return;
   if (cleanDiff === deleteS) {
     logDeleted('');
   } else if (isPrimitive(cleanDiff)) {
     logNewValue(String(cleanDiff));
   } else if (rawS in cleanDiff) {
-    if (isFunction(cleanDiff)) return logNewValue(cleanDiff.toString());
+    if (isFunction(cleanDiff)) return logNewFn(cleanDiff.toString());
     return logAdded(JSON.stringify(cleanDiff, null, 2));
   }
 
   for (const name of obj_keys(cleanDiff)) {
     const subDiff = cleanDiff[name];
     if (empt(subDiff)) continue;
+    if (skip(subDiff)) continue;
     console.group(name);
-    printDiff(subDiff);
+    printDiff(subDiff, skip);
     console.groupEnd();
   }
 }

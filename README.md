@@ -253,13 +253,15 @@ const Text = Component<{ size?: string }>( // type for internal props
 
 ### Debug mode
 
-Use `debug` function to enable debug mode
+Use `debug` function to enable debug mode.
+Debugging information will be output to the browser console when rendering components.
 
 ```js
 debug(true);
 ```
 
-After that, use prop `_debug` for component
+After that, use prop `_debug` for component.
+Also use the property `_debugChildren` to see debugging information about child components.
 
 ```tsx
 import { Component, render } from "parvis";
@@ -272,7 +274,7 @@ const Block = Component<{ red?: boolean }>(
 );
 
 const block = (
-  <Block red _debug>
+  <Block red _debug _debugChildren>
     text
   </Block>
 );

@@ -26,7 +26,7 @@ import { DEBUG_MODE } from './debug';
 import { printComponentTree } from './printComponentTree';
 import { runEffects } from './effects';
 import { getNewProps, runPropsEffects } from './applyDiff';
-import { console_log, get_props, obj_assign } from '../utils';
+import { console_log, get_props, isObject, obj_assign } from '../utils';
 
 export type CreateComponentParams<P extends ComponentProps> = {
   light: VDOMLightComponent<P>;
@@ -148,7 +148,7 @@ export const createComponent = <P extends ComponentProps>({
     return element;
   };
 
-  function rerender() {
+  function rerender(debugChildrenLevel: number = 0) {
     if (!domData.ref) return;
 
     const template = render();
@@ -156,15 +156,18 @@ export const createComponent = <P extends ComponentProps>({
     if (!light.props) light.props = {};
 
     const lightDiff = diffVdomLight(lightVdom, light);
+    const spacing = '   '.repeat(debugChildrenLevel);
+    const showDebugInfo =
+      DEBUG_MODE.enabled && (props._debug || debugChildrenLevel > 0);
 
-    if (DEBUG_MODE.enabled && props._debug) {
-      console.groupCollapsed('old state: ' + componentName);
+    if (showDebugInfo) {
+      console.groupCollapsed(spacing + 'old state: ' + componentName);
       console_log(printComponentTree(component));
       console_log(stateList.map((v) => v[0]()));
       console.groupEnd();
-      console.groupCollapsed('diff: ' + componentName);
+      console.group(spacing + 'diff: ' + componentName);
       console_log({ template, light, lightVdom, lightDiff });
-      printDiff(lightDiff);
+      printDiff(lightDiff, (d) => isObject(d) && 'get' in d);
       console.groupEnd();
     }
     if (empt(lightDiff)) return;
@@ -172,22 +175,31 @@ export const createComponent = <P extends ComponentProps>({
     // обновляем, если были изменения
     lightVdom = light;
 
-    patchDOM(domData.ref, lightDiff);
+    patchDOM(
+      domData.ref,
+      lightDiff,
+      Boolean(props._debugChildren) || debugChildrenLevel > 0
+        ? debugChildrenLevel
+        : undefined
+    );
 
-    if (DEBUG_MODE.enabled && props._debug) {
-      console.groupCollapsed('new state: ' + componentName);
+    if (showDebugInfo) {
+      console.groupCollapsed(spacing + 'new state: ' + componentName);
       console_log(printComponentTree(component));
       console_log(stateList.map((v) => v[0]()));
       console.groupEnd();
     }
   }
 
-  let applyDiff: VDOMComponent['applyDiff'] = (componentDiff) => {
+  let applyDiff: VDOMComponent['applyDiff'] = (
+    componentDiff,
+    debugChildrenLevel
+  ) => {
     const oldProps = props;
     // достаточно raw объекта light, так как потом компонент сам вычислит diff
     props = getNewProps(componentDiff, props);
 
-    rerender();
+    rerender(debugChildrenLevel);
 
     runPropsEffects(oldProps, props, (name) => {
       const propUpdateGetter = propsUpdateMap.get(name);
