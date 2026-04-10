@@ -8,7 +8,7 @@ debug(true);
 
 export const RedBox = Component<{ className?: string }>("RedBox", () => {
   return ({ className, children }) => {
-    return <div class={[css.redbox, className]}>{children}</div>;
+    return <div class={[css.redbox, className ?? '']}>{children}</div>;
   };
 });
 
@@ -24,6 +24,10 @@ export const App = Component("App", ({ hooks, state }) => {
   const [visible, setVisible] = state(true);
   const [text, setText] = state("");
   const [option, setOption] = state("A" as Options[number]);
+
+  hooks.mount(() => {
+    setStart(1);
+  });
 
   let ref: HTMLElement;
   const focusRef = () => ref.focus();
@@ -121,9 +125,9 @@ console.log(
   printTree(
     <article>
       <div>
-        <button on:click={() => (x) => x + 1}>+ start</button>
+        <button on:click={() => (x: number) => x + 1}>+ start</button>
         <br />
-        <button on:click={() => (x) => x - 1}>- start</button>
+        <button on:click={() => (x: number) => x - 1}>- start</button>
       </div>
       <Counter start={1} />
     </article>

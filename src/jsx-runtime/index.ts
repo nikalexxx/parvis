@@ -1,6 +1,7 @@
 import { HtmlElementProps, HtmlTargets } from '../element/builder';
 import {
   ComponentFunction,
+  TemplateTree,
   TemplateTreeComponent,
   TemplateTreeElement,
   TemplateTreeNode,
@@ -17,7 +18,7 @@ declare global {
     type Element = TemplateTreeElement | TemplateTreeComponent;
 
     type IntrinsicElements = {
-      [TagName in Tag]: Partial<HtmlElementProps<TagName, true>>;
+      [TagName in Tag]: Partial<HtmlElementProps<TagName, true>> & {children?: TemplateTree};
     };
   }
 }

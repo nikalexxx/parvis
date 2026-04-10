@@ -57,7 +57,7 @@ export type TemplateTreeComponent<P extends ComponentProps = any> =
  * функция сборки компонента, в первую очередь для jsx
  */
 export type ComponentFunction<P extends ComponentProps = {}> = (<IP extends P>(
-  props: IP & TreeProps & ComponentAdditionalProps,
+  props: IP & TreeProps & ComponentAdditionalProps & {children?: TemplateTree},
   children: TemplateTree
 ) => TemplateTreeComponent<IP>) & {
   C: TreeBuilder<TemplateTreeComponent<P>>;

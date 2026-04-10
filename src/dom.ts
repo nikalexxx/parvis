@@ -80,7 +80,6 @@ export function DOMFromVdom(
 
   // компоненты раскрываются в элементы
   if (isComponent(vdom)) {
-    effects?.push(vdom.effects.mount);
     const template = vdom.render();
     // подготовка
     const light = createLightElement(template);
@@ -96,6 +95,9 @@ export function DOMFromVdom(
 
     // уже после включения в дерево на странице привязываем реальный dom
     effects?.push(() => vdom.externalEffects.append(dom));
+
+    // mount уже после привязки, чтобы работал setState
+    effects?.push(vdom.effects.mount);
     return dom;
   }
 
